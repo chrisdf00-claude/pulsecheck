@@ -1,0 +1,1946 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pulse Check</title>
+<meta name="description" content="Quick mood, anxiety, stress and energy check-ins, compared with your Oura data.">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Pulse Check">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+:root{
+  --bg:#f5f4ef; --card:#ffffff; --text:#1c2430; --muted:#5b6776; --line:#e2e0d8;
+  --accent:#0f766e; --accent-ink:#ffffff; --accent-soft:#d9efec;
+  --warn-bg:#fdf3dc; --warn-ink:#6b4a05; --danger:#b42318;
+  --c-mood:#0f766e; --c-anxiety:#c2410c; --c-stress:#7c3aed; --c-energy:#1d4ed8; --c-oura:#64748b;
+  --on-c:#ffffff;
+  --shadow:0 1px 2px rgba(20,30,40,.06),0 4px 14px rgba(20,30,40,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161b; --card:#1a2128; --text:#e7edf3; --muted:#9aa8b6; --line:#2a333c;
+    --accent:#2dd4bf; --accent-ink:#06211e; --accent-soft:#16403c;
+    --warn-bg:#3a2e12; --warn-ink:#f2d58b; --danger:#f97066;
+    --c-mood:#2dd4bf; --c-anxiety:#fb923c; --c-stress:#a78bfa; --c-energy:#60a5fa; --c-oura:#94a3b8;
+    --on-c:#0b1218; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161b; --card:#1a2128; --text:#e7edf3; --muted:#9aa8b6; --line:#2a333c;
+  --accent:#2dd4bf; --accent-ink:#06211e; --accent-soft:#16403c;
+  --warn-bg:#3a2e12; --warn-ink:#f2d58b; --danger:#f97066;
+  --c-mood:#2dd4bf; --c-anxiety:#fb923c; --c-stress:#a78bfa; --c-energy:#60a5fa; --c-oura:#94a3b8;
+  --on-c:#0b1218; --shadow:none;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+#app{max-width:560px;margin:0 auto;padding:0 16px calc(86px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top)) 2px 10px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:.2px}
+.brand svg{width:26px;height:26px;color:var(--accent)}
+.date{color:var(--muted);font-size:14px}
+h1,h2,h3{margin:0;line-height:1.25}
+h2{font-size:18px;margin-bottom:6px}
+h3{font-size:16px;font-weight:600}
+.section-t{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:26px 2px 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:0 0 12px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)} .small{font-size:13px} .opt{font-weight:400;color:var(--muted);font-size:13px}
+.hero h1{font-size:22px}
+.hero p{margin:4px 0 0;color:var(--muted)}
+.dots{display:flex;gap:7px;margin-top:12px;align-items:center}
+.dots i{width:12px;height:12px;border-radius:50%;border:2px solid var(--accent);display:block}
+.dots i.on{background:var(--accent)}
+.dots span{font-size:13px;color:var(--muted);margin-left:4px}
+.notice{background:var(--warn-bg);color:var(--warn-ink);border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:14px}
+.notice .link{color:inherit}
+.metric-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;gap:8px}
+.scale{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.scale button{appearance:none;font:inherit;font-weight:600;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:transparent;color:var(--text);cursor:pointer;transition:transform .08s,background .12s}
+.scale button:active{transform:scale(.94)}
+.scale button.on{background:var(--mc);border-color:var(--mc);color:var(--on-c)}
+.ends{display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px;margin-top:6px}
+button{font:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.link{background:none;border:0;padding:2px 0;color:var(--accent);text-decoration:underline;cursor:pointer;font-size:14px}
+.link.danger{color:var(--danger)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{appearance:none;border:1.5px solid var(--line);background:transparent;color:var(--text);padding:7px 12px;border-radius:999px;font-size:14.5px;cursor:pointer}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--text);font-weight:600}
+.chip .x{margin-left:6px;color:var(--muted)}
+input[type=text],input[type=password],input[type=time],input[type=datetime-local],select{font:inherit;color:var(--text);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+select{width:auto;padding:8px 10px}
+.whenrow{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;margin:2px 2px 14px;flex-wrap:wrap}
+.whenrow input{width:auto}
+.primary,.btn{appearance:none;border-radius:12px;border:1.5px solid var(--accent);padding:10px 16px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-align:center;color:var(--accent);background:transparent}
+.primary{background:var(--accent);color:var(--accent-ink)}
+.primary.big{width:100%;min-height:52px;font-size:17px}
+.primary[disabled],.btn[disabled]{opacity:.55;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.row.sp{justify-content:space-between}
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding:6px 8px calc(6px + env(safe-area-inset-bottom));z-index:5}
+.tabs a{flex:1;max-width:140px;text-decoration:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;padding:6px 0;border-radius:12px}
+.tabs a svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabs a[aria-current=page]{color:var(--accent);font-weight:700}
+#toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:10;max-width:88vw;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.seg button{border:0;background:transparent;color:var(--text);padding:8px 14px;cursor:pointer;font-size:14px}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.opts{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0 0;font-size:13px;color:var(--muted)}
+.opts label{display:flex;flex-direction:column;gap:4px}
+.insight{display:grid;gap:4px}
+.insight .k{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.insight p{margin:0}
+.insight .sub{color:var(--muted);font-size:14px}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:12px;color:var(--muted);margin-right:6px}
+.pill.strong{border-color:var(--accent);color:var(--accent)}
+.insight.care{border-color:var(--accent);background:var(--accent-soft)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tr{padding:12px}
+.tr .lab{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.tr .lab i{width:9px;height:9px;border-radius:50%;background:var(--mc);display:inline-block}
+.tr .big{font-size:26px;font-weight:700;line-height:1.1;margin-top:2px}
+.tr .delta{font-size:13px;color:var(--muted)}
+.spark{width:100%;height:36px;display:block;margin-top:6px}
+.matrix{width:100%;border-collapse:separate;border-spacing:3px;font-size:13px}
+.matrix th{font-weight:600;color:var(--muted);text-align:center;font-size:12px;padding:2px}
+.matrix th.rl{text-align:left;color:var(--text);font-weight:500;font-size:13px;width:34%}
+.matrix td{text-align:center;border-radius:8px;padding:9px 2px;cursor:pointer;font-variant-numeric:tabular-nums;border:1px solid transparent}
+.matrix td.na{color:var(--muted);cursor:default;background:transparent}
+.matrix td.sig{font-weight:700;border-color:var(--text)}
+.matrix td:focus-visible{outline:3px solid var(--accent)}
+.legend{display:flex;gap:12px;align-items:center;font-size:12px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px}
+.charts svg{width:100%;height:auto;display:block}
+.ax{stroke:var(--line);stroke-width:1}
+.tx{fill:var(--muted);font-size:10.5px}
+.tt{fill:var(--text);font-size:11px;font-weight:600}
+.cal{width:100%;height:auto}
+.cal-l{fill:var(--muted);font-size:10px}
+.cal-empty{fill:none;stroke:var(--line);stroke-width:1}
+.bar-row{display:grid;grid-template-columns:92px 1fr 70px;gap:8px;align-items:center;margin:7px 0;font-size:14px}
+.bar{height:12px;background:var(--bg);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%}
+.bar-v small{color:var(--muted);margin-left:4px;font-size:11px}
+.fx{width:100%;border-collapse:separate;border-spacing:3px;font-size:13px}
+.fx th{font-size:12px;color:var(--muted);font-weight:600;text-align:center}
+.fx td{text-align:center;border-radius:8px;padding:8px 2px;font-variant-numeric:tabular-nums}
+.fx td.tg{text-align:left;font-weight:600;padding-left:4px}
+.fx td.tg small{display:block;color:var(--muted);font-weight:400}
+details{margin-top:10px}
+summary{cursor:pointer;font-weight:600;padding:6px 0}
+.day-h{font-size:13px;font-weight:700;color:var(--muted);margin:20px 2px 8px}
+.entry .top2{display:flex;justify-content:space-between;color:var(--muted);font-size:13px}
+.entry .vals{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.entry .v{font-size:13px;padding:3px 9px;border-radius:8px;background:var(--bg);border:1px solid var(--line)}
+.entry .v b{color:var(--mc)}
+.entry .note{font-style:italic;margin:6px 0 0;color:var(--text)}
+.entry .tags{font-size:13px;color:var(--muted);margin-top:6px}
+.field{margin:10px 0}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.trow{display:flex;gap:8px;align-items:center;margin:6px 0}
+.trow input{max-width:150px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+.msg-ok{color:var(--accent)} .msg-err{color:var(--danger)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.ih{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.ih .sub2{font-size:12px;color:var(--muted)}
+.pill.conf-confirmed{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.pill.conf-likely{border-color:var(--accent);color:var(--accent);font-weight:600}
+.pill.conf-hint{border-style:dashed}
+details.stats{margin-top:2px}
+details.stats summary{font-weight:500;font-size:13px;color:var(--accent);padding:2px 0}
+details.stats p{margin:6px 0 0}
+.matrix td.likely{border:1.5px solid var(--text)}
+.matrix td.conf{border:2.5px solid var(--text);font-weight:700}
+.fx td.likely{box-shadow:inset 0 0 0 1.5px var(--text)}
+.fx td.conf{box-shadow:inset 0 0 0 2.5px var(--text);font-weight:700}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.outlook{border-width:2px}
+.outlook.harder{border-color:var(--c-anxiety)}
+.outlook.better{border-color:var(--accent)}
+.outlook h2{font-size:19px;margin:4px 0}
+.dg{display:grid;grid-template-columns:auto 1fr auto;gap:6px 12px;font-size:14.5px;align-items:baseline}
+.dg .better{color:var(--accent);font-size:12.5px;font-weight:600}
+.dg .worse{color:var(--c-anxiety);font-size:12.5px;font-weight:600}
+.tog{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text);margin-top:10px;cursor:pointer}
+.tog input{width:20px;height:20px;accent-color:var(--accent);margin:0}
+.phq-q{margin:14px 0 6px;font-weight:600}
+.phq-o{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.phq-o button{appearance:none;border:1.5px solid var(--line);background:transparent;color:var(--text);border-radius:10px;padding:10px 8px;font-size:14px;cursor:pointer;text-align:center;min-height:44px}
+.phq-o button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.prog{height:8px;background:var(--bg);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:10px 0 6px}
+.prog i{display:block;height:100%;background:var(--accent)}
+.stab{width:100%;border-collapse:collapse;font-size:13.5px}
+.stab th{font-size:12px;color:var(--muted);font-weight:600;text-align:right;padding:4px}
+.stab th:first-child,.stab td:first-child{text-align:left}
+.stab td{padding:7px 4px;text-align:right;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.exp-res{display:grid;grid-template-columns:1fr auto;gap:5px 12px;font-size:14px;margin-top:8px;font-variant-numeric:tabular-nums}
+.verdict{font-weight:700}
+.verdict.good{color:var(--accent)}
+.verdict.bad{color:var(--c-anxiety)}
+.hero .exp{margin-top:10px;font-size:13.5px;color:var(--muted)}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+ul.notes{margin:10px 0 0;padding-left:18px;font-size:13.5px}
+ul.notes li{margin:4px 0}
+.hint-list .card{box-shadow:none}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l3-7 4 14 3-7h6"/></svg>
+      <span>Pulse Check</span>
+    </div>
+    <div class="date" id="today-label"></div>
+  </header>
+  <div id="storage-warn" class="notice" hidden>Your browser is blocking local storage, so check-ins won't be kept after you close this page. Try opening the app in a normal (non-private) window or install it to your home screen.</div>
+  <main>
+    <section id="view-checkin"><div id="hero" class="card hero"></div><div id="phq-card"></div><div id="edit-banner" class="notice" hidden></div><form id="checkin-form" autocomplete="off"></form></section>
+    <section id="view-insights" hidden></section>
+    <section id="view-history" hidden></section>
+    <section id="view-data" hidden></section>
+  </main>
+  <nav class="tabs" aria-label="Main">
+    <a href="#checkin" data-tab="checkin"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Check-in</a>
+    <a href="#insights" data-tab="insights"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>Insights</a>
+    <a href="#history" data-tab="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>History</a>
+    <a href="#data" data-tab="data"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg>Data</a>
+  </nav>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* =====================================================================
+   Helpers
+   ===================================================================== */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parseYmd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const addDays = (d,n) => new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
+const mean = a => a.reduce((s,v)=>s+v,0)/a.length;
+const sd = a => { if (a.length<2) return 0; const m=mean(a); return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/(a.length-1)); };
+const median = a => { if (!a.length) return null; const s=[...a].sort((x,y)=>x-y), n=s.length; return n%2 ? s[(n-1)/2] : (s[n/2-1]+s[n/2])/2; };
+const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
+const fmt = (v,d=1) => (v==null || !isFinite(v)) ? '–' : (+v).toFixed(d);
+const sgn = (v,d=1) => { if (v==null||!isFinite(v)) return '–'; const s=Math.abs(v).toFixed(d); return (+s===0 ? '' : v>0 ? '+' : '−') + s; };
+const nice = v => { const a=Math.abs(v); return v.toFixed(a>=10?0:a>=1?1:2); };
+const sgnN = v => { if (v==null||!isFinite(v)) return '–'; const s=nice(Math.abs(v)); return (+s===0 ? '' : v>0 ? '+' : '−') + s; };
+const fp = p => p==null||!isFinite(p) ? '–' : p<0.001 ? '< 0.001' : p.toFixed(3);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const todayStr = () => ymd(new Date());
+const maxOf = a => a.reduce((m,v)=>v>m?v:m, -Infinity);
+const slug = s => String(s).toLowerCase().replace(/\.[a-z0-9]+$/,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+const SHIFT = new Map();
+const shift = (d,n) => { const k=d+'|'+n; let v=SHIFT.get(k); if (!v){ v=ymd(addDays(parseYmd(d),n)); SHIFT.set(k,v); } return v; };
+const daysBetween = (a,b) => Math.round((parseYmd(b)-parseYmd(a))/864e5);
+const shortDate = d => parseYmd(d).toLocaleDateString([], {month:'short', day:'numeric'});
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2800); }
+
+/* =====================================================================
+   Constants
+   ===================================================================== */
+const METRICS = [
+  {k:'mood',    label:'Mood',    q:'How is your mood?',        lo:'Very low', hi:'Great',        color:'--c-mood'},
+  {k:'anxiety', label:'Anxiety', q:'How anxious do you feel?', lo:'Calm',     hi:'Very anxious', color:'--c-anxiety'},
+  {k:'stress',  label:'Stress',  q:'How stressed do you feel?',lo:'Relaxed',  hi:'Overwhelmed',  color:'--c-stress'},
+  {k:'energy',  label:'Energy',  q:'How is your energy?',      lo:'Drained',  hi:'Energized',    color:'--c-energy'}
+];
+const M = Object.fromEntries(METRICS.map(m=>[m.k,m]));
+const LAB = k => k==='overall' ? 'Overall' : M[k].label;
+const GOOD_UP = k => k==='mood' || k==='energy' || k==='overall';
+
+const OURA = [
+  {k:'sleep_score',      label:'Sleep score',          p:'sleep score',          unit:'',    dec:0},
+  {k:'total_sleep_h',    label:'Sleep duration',       p:'sleep duration',       unit:' h',  dec:1},
+  {k:'sleep_eff',        label:'Sleep efficiency',     p:'sleep efficiency',     unit:'%',   dec:0},
+  {k:'deep_min',         label:'Deep sleep',           p:'deep sleep',           unit:' min',dec:0},
+  {k:'rem_min',          label:'REM sleep',            p:'REM sleep',            unit:' min',dec:0},
+  {k:'latency_min',      label:'Time to fall asleep',  p:'time to fall asleep',  unit:' min',dec:0},
+  {k:'avg_hrv',          label:'HRV (sleep avg)',      p:'HRV',                  unit:' ms', dec:0},
+  {k:'lowest_hr',        label:'Lowest heart rate',    p:'lowest heart rate',    unit:' bpm',dec:0},
+  {k:'avg_hr',           label:'Avg sleeping HR',      p:'average sleeping heart rate', unit:' bpm', dec:0},
+  {k:'readiness_score',  label:'Readiness score',      p:'readiness score',      unit:'',    dec:0},
+  {k:'temp_dev',         label:'Temp deviation',       p:'temperature deviation',unit:' °C', dec:2},
+  {k:'activity_score',   label:'Activity score',       p:'activity score',       unit:'',    dec:0},
+  {k:'steps',            label:'Steps',                p:'step count',           unit:'',    dec:0},
+  {k:'active_cal',       label:'Active calories',      p:'active calories',      unit:' kcal',dec:0},
+  {k:'stress_high_min',  label:'High-stress time',     p:'high-stress time',     unit:' min',dec:0},
+  {k:'recovery_high_min',label:'High-recovery time',   p:'high-recovery time',   unit:' min',dec:0},
+  {k:'spo2',             label:'Blood oxygen',         p:'blood oxygen',         unit:'%',   dec:1}
+];
+const OURA_BY = Object.fromEntries(OURA.map(o=>[o.k,o]));
+// Metrics that describe a night's sleep / next-morning recovery (used for "today → tonight" and the outlook)
+const SLEEPISH = ['sleep_score','total_sleep_h','sleep_eff','deep_min','rem_min','latency_min','avg_hrv','lowest_hr','avg_hr','readiness_score','temp_dev','spo2'];
+// Natural step sizes for "each extra ___ goes with ___"
+const STEP = {sleep_score:10, total_sleep_h:1, sleep_eff:5, deep_min:15, rem_min:15, latency_min:10, avg_hrv:10, lowest_hr:5, avg_hr:5, readiness_score:10, temp_dev:0.25, activity_score:10, steps:2000, active_cal:100, stress_high_min:30, recovery_high_min:30, spo2:1};
+const SHORT = {sleep_score:'Sleep score', total_sleep_h:'Sleep (h)', avg_hrv:'HRV (ms)', lowest_hr:'Lowest HR', latency_min:'To sleep (min)', readiness_score:'Readiness'};
+const DEFAULT_TAGS = ['Exercise','Caffeine','Alcohol','Outside','Social','Alone time','Work','Busy day','Family','Poor sleep','Ate well','Skipped meal','Screens','Mindfulness','Travel','Sick'];
+const NON_LEVER = ['Work','Busy day','Sick','Poor sleep','Travel','Family'];
+const SLOTS = [['morning','Morning'],['afternoon','Afternoon'],['evening','Evening']];
+const slotOf = h => h<12 ? 'morning' : h<17 ? 'afternoon' : 'evening';
+const OFF = {same:0, prev:-1, next:1};
+const DIR_LAB = {same:'Last night → today', prev:'Day before → today', next:'Today → tonight'};
+const DIR_HELP = {
+  same:"Last night's sleep and today's readiness vs today's check-ins.",
+  prev:"Yesterday's Oura data vs today's check-ins.",
+  next:"Today's check-ins vs that night's sleep, after allowing for the night before."
+};
+const CONF_LAB = {confirmed:'Confirmed', likely:'Likely', hint:'Early hint'};
+const CONF_RANK = c => c==='confirmed'?2 : c==='likely'?1 : 0;
+const PHQ_ITEMS = ['Feeling nervous, anxious or on edge','Not being able to stop or control worrying','Little interest or pleasure in doing things','Feeling down, depressed or hopeless'];
+const PHQ_OPTS = ['Not at all','Several days','More than half the days','Nearly every day'];
+
+/* =====================================================================
+   State (everything lives in this browser's localStorage)
+   ===================================================================== */
+const KEY = 'pulsecheck.v1', OAUTH_KEY = 'pulsecheck.oura.oauth', PKCE_KEY = 'pulsecheck.oura.pkce';
+const OURA_AUTH_URL = 'https://cloud.ouraring.com/oauth/authorize';
+const OURA_SCOPES = 'email personal daily heartrate';
+let memOnly = false;
+function defaults(){
+  return {v:2, entries:[], oura:{days:{}, labels:{}, lastSync:null}, hr:{}, phq:[], experiments:[],
+          settings:{reminders:['09:00','20:00'], tags:DEFAULT_TAGS.slice(), lastBackup:null, tagScope:'day', phq4:true, phqSnooze:0},
+          demo:false, demoDays:[]};
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if (raw){
+      const o = JSON.parse(raw), d = defaults();
+      return Object.assign(d, o, {oura:Object.assign(d.oura, o.oura||{}), settings:Object.assign(d.settings, o.settings||{})});
+    }
+  }catch(e){ memOnly = true; console.warn('storage unavailable', e); }
+  return defaults();
+}
+let S = load();
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch(e){ memOnly = true; $('#storage-warn').hidden = false; }
+}
+/* ---- Oura OAuth2 (Authorization Code + PKCE) ----
+   Oura retired personal access tokens, so this now holds a short-lived access token plus a
+   refresh token, both obtained via a browser redirect to Oura's own login/consent page. The
+   client secret never lives in this file — it stays server-side in the small Worker proxy
+   (see SETUP.md), which is the only part of this exchange a browser can't do on its own
+   (public CORS for the token endpoint isn't available, and a secret can't be kept in page source). */
+const loadOauth = () => { try{ return JSON.parse(localStorage.getItem(OAUTH_KEY)||'{}'); }catch(e){ return {}; } };
+const saveOauth = o => { try{ localStorage.setItem(OAUTH_KEY, JSON.stringify(o)); }catch(e){} };
+const ouraConnected = () => { const o=loadOauth(); return !!(o.access_token && o.refresh_token); };
+function b64url(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function randStr(len){ const a=new Uint8Array(len); crypto.getRandomValues(a); return b64url(a.buffer); }
+async function pkceChallenge(verifier){ return b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))); }
+function redirectUri(){ return location.origin + location.pathname; }
+async function connectOura(clientId, workerUrl){
+  clientId=(clientId||'').trim(); workerUrl=(workerUrl||'').trim().replace(/\/+$/,'');
+  if (!clientId || !workerUrl){ toast('Enter a Client ID and Worker URL first'); return; }
+  if (!(window.isSecureContext)){ OURA_MSG={cls:'small msg-err',text:'Oura sign-in needs this page loaded over https:// (not a local file). See SETUP.md for hosting it.'}; renderData(); return; }
+  const o=loadOauth(); o.client_id=clientId; o.worker_url=workerUrl; saveOauth(o);
+  const verifier=randStr(64), state=randStr(16);
+  sessionStorage.setItem(PKCE_KEY, JSON.stringify({verifier,state}));
+  const challenge=await pkceChallenge(verifier);
+  const p=new URLSearchParams({response_type:'code',client_id:clientId,redirect_uri:redirectUri(),scope:OURA_SCOPES,state,code_challenge:challenge,code_challenge_method:'S256'});
+  location.href=OURA_AUTH_URL+'?'+p;
+}
+async function handleOuraCallback(){
+  const u=new URL(location.href), code=u.searchParams.get('code'), state=u.searchParams.get('state'), err=u.searchParams.get('error');
+  if (!code && !err) return false;
+  history.replaceState(null,'',location.pathname+location.hash);
+  let pkce=null; try{ pkce=JSON.parse(sessionStorage.getItem(PKCE_KEY)||'null'); }catch(e){}
+  sessionStorage.removeItem(PKCE_KEY);
+  if (err){ OURA_MSG={cls:'small msg-err',text:'Oura sign-in was cancelled or failed ('+err+').'}; return true; }
+  const o=loadOauth();
+  if (!pkce || pkce.state!==state || !o.worker_url || !o.client_id){ OURA_MSG={cls:'small msg-err',text:'Could not finish signing in (the link expired or setup is missing). Try connecting again.'}; return true; }
+  try{
+    const res=await fetch(o.worker_url+'/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,code_verifier:pkce.verifier,client_id:o.client_id,redirect_uri:redirectUri()})});
+    const j=await res.json().catch(()=>({}));
+    if (!res.ok || !j.access_token) throw new Error(j.error_description||j.error||('HTTP '+res.status));
+    o.access_token=j.access_token; o.refresh_token=j.refresh_token||o.refresh_token; o.expires_at=Date.now()+((j.expires_in||3600)*1000)-60000;
+    saveOauth(o);
+    OURA_MSG={cls:'small msg-ok',text:'Connected to Oura. Tap "Sync now" to pull your data.'};
+    toast('Connected to Oura ✓');
+  }catch(e){ OURA_MSG={cls:'small msg-err',text:"Couldn't finish connecting to Oura ("+e.message+"). Check the Worker URL and try again."}; }
+  return true;
+}
+async function getAccessToken(){
+  const o=loadOauth();
+  if (!o.access_token) return '';
+  if (o.expires_at && o.expires_at>Date.now()+30000) return o.access_token;
+  if (!o.refresh_token || !o.worker_url || !o.client_id) return '';
+  try{
+    const res=await fetch(o.worker_url+'/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refresh_token:o.refresh_token,client_id:o.client_id})});
+    const j=await res.json().catch(()=>({}));
+    if (!res.ok || !j.access_token) throw new Error('refresh failed');
+    o.access_token=j.access_token; if (j.refresh_token) o.refresh_token=j.refresh_token; o.expires_at=Date.now()+((j.expires_in||3600)*1000)-60000;
+    saveOauth(o); return o.access_token;
+  }catch(e){ return ''; }
+}
+function disconnectOura(){ const o=loadOauth(); delete o.access_token; delete o.refresh_token; delete o.expires_at; saveOauth(o); OURA_MSG={cls:'',text:''}; toast('Disconnected from Oura'); }
+if (memOnly) $('#storage-warn').hidden = false;
+try{ if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+
+/* =====================================================================
+   Stats
+   ===================================================================== */
+function lgamma(x){
+  const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];
+  let y=x, t=x+5.5; t-=(x+0.5)*Math.log(t); let s=1.000000000190015;
+  for (let j=0;j<6;j++) s+=c[j]/++y;
+  return -t+Math.log(2.5066282746310005*s/x);
+}
+function betacf(a,b,x){
+  const FP=1e-300; const qab=a+b, qap=a+1, qam=a-1;
+  let c=1, d=1-qab*x/qap; if (Math.abs(d)<FP) d=FP; d=1/d; let h=d;
+  for (let m=1;m<=200;m++){
+    const m2=2*m;
+    let aa=m*(b-m)*x/((qam+m2)*(a+m2));
+    d=1+aa*d; if (Math.abs(d)<FP) d=FP; c=1+aa/c; if (Math.abs(c)<FP) c=FP; d=1/d; h*=d*c;
+    aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+    d=1+aa*d; if (Math.abs(d)<FP) d=FP; c=1+aa/c; if (Math.abs(c)<FP) c=FP; d=1/d;
+    const del=d*c; h*=del; if (Math.abs(del-1)<3e-12) break;
+  }
+  return h;
+}
+function betai(a,b,x){
+  if (x<=0) return 0; if (x>=1) return 1;
+  const bt=Math.exp(lgamma(a+b)-lgamma(a)-lgamma(b)+a*Math.log(x)+b*Math.log(1-x));
+  return x<(a+1)/(a+b+2) ? bt*betacf(a,b,x)/a : 1-bt*betacf(b,a,1-x)/b;
+}
+const tTwoSided = (t,df) => betai(df/2, 0.5, df/(df+t*t));
+const tCrit = df => 1.96 + 2.5/df + 2/(df*df);   // ≈ 97.5th percentile of t
+function ranks(a){
+  const idx=a.map((v,i)=>[v,i]).sort((p,q)=>p[0]-q[0]); const r=new Array(a.length); let i=0;
+  while (i<idx.length){ let j=i; while (j+1<idx.length && idx[j+1][0]===idx[i][0]) j++;
+    const rk=(i+j)/2+1; for (let k=i;k<=j;k++) r[idx[k][1]]=rk; i=j+1; }
+  return r;
+}
+function pearson(x,y){
+  const n=x.length; if (n<3) return null; const mx=mean(x), my=mean(y); let sxy=0,sxx=0,syy=0;
+  for (let i=0;i<n;i++){ const dx=x[i]-mx, dy=y[i]-my; sxy+=dx*dy; sxx+=dx*dx; syy+=dy*dy; }
+  return (sxx===0||syy===0) ? null : sxy/Math.sqrt(sxx*syy);
+}
+function spearman(x,y){
+  const n=x.length; if (n<5) return null;
+  const r=pearson(ranks(x),ranks(y)); if (r==null) return null;
+  const rr=clamp(r,-0.999999,0.999999);
+  return {rho:r, n, p:tTwoSided(Math.abs(rr)*Math.sqrt((n-2)/(1-rr*rr)), n-2)};
+}
+function welch(a,b){
+  const n1=a.length, n2=b.length; if (n1<2||n2<2) return null;
+  const m1=mean(a), m2=mean(b), v1=sd(a)**2, v2=sd(b)**2, se2=v1/n1+v2/n2; if (se2===0) return null;
+  const t=(m1-m2)/Math.sqrt(se2);
+  const df=se2**2/((v1/n1)**2/(n1-1)+(v2/n2)**2/(n2-1));
+  return {diff:m1-m2, p:tTwoSided(Math.abs(t),df), n1, n2, m1, m2};
+}
+function ols(x,y){
+  if (x.length<3) return null; const mx=mean(x), my=mean(y); let sxy=0,sxx=0;
+  for (let i=0;i<x.length;i++){ sxy+=(x[i]-mx)*(y[i]-my); sxx+=(x[i]-mx)**2; }
+  if (sxx===0) return null; const b=sxy/sxx; return {b, a:my-b*mx};
+}
+function inverse(A){
+  const n=A.length; let scale=0; for (let i=0;i<n;i++) scale=Math.max(scale, Math.abs(A[i][i]));
+  const tol=1e-11*(scale||1);
+  const W=A.map((r,i)=>{ const row=r.slice(); for (let j=0;j<n;j++) row.push(i===j?1:0); return row; });
+  for (let c=0;c<n;c++){
+    let piv=c; for (let r=c+1;r<n;r++) if (Math.abs(W[r][c])>Math.abs(W[piv][c])) piv=r;
+    if (Math.abs(W[piv][c])<tol) return null;
+    if (piv!==c){ const t=W[c]; W[c]=W[piv]; W[piv]=t; }
+    const d=W[c][c]; for (let k=0;k<2*n;k++) W[c][k]/=d;
+    for (let r=0;r<n;r++){ if (r===c) continue; const f=W[r][c]; if (!f) continue; for (let k=0;k<2*n;k++) W[r][k]-=f*W[c][k]; }
+  }
+  return W.map(r=>r.slice(n));
+}
+const mm = (A,B) => A.map(r=>B[0].map((_,j)=>r.reduce((s,v,k)=>s+v*B[k][j],0)));
+// OLS with intercept. groups → cluster-robust (CR1) standard errors, e.g. check-ins clustered by day.
+function regress(X, y, groups){
+  const n=y.length; if (!n) return null; const p=X[0].length+1; if (n<p+3) return null;
+  const Z=X.map(r=>[1].concat(r));
+  const A=Array.from({length:p},()=>new Array(p).fill(0)), b=new Array(p).fill(0);
+  for (let i=0;i<n;i++){ const z=Z[i]; for (let a=0;a<p;a++){ if (!z[a]) continue; b[a]+=z[a]*y[i]; for (let c=0;c<p;c++) A[a][c]+=z[a]*z[c]; } }
+  const inv=inverse(A); if (!inv) return null;
+  const beta=inv.map(r=>r.reduce((s,v,j)=>s+v*b[j],0));
+  const e=Z.map((z,i)=>y[i]-z.reduce((s,v,j)=>s+v*beta[j],0));
+  let V, df;
+  if (groups){
+    const g=new Map(); groups.forEach((k,i)=>{ let u=g.get(k); if (!u){ u=new Array(p).fill(0); g.set(k,u); } for (let a=0;a<p;a++) u[a]+=Z[i][a]*e[i]; });
+    const G=g.size; if (G<p+2) return null;
+    const meat=Array.from({length:p},()=>new Array(p).fill(0));
+    g.forEach(u=>{ for (let a=0;a<p;a++) for (let c=0;c<p;c++) meat[a][c]+=u[a]*u[c]; });
+    const fac=(G/(G-1))*((n-1)/(n-p));
+    V=mm(mm(inv,meat),inv).map(r=>r.map(v=>v*fac)); df=G-1;
+  } else {
+    const s2=e.reduce((s,v)=>s+v*v,0)/(n-p); V=inv.map(r=>r.map(v=>v*s2)); df=n-p;
+  }
+  const se=beta.map((_,j)=>Math.sqrt(Math.max(V[j][j],0)));
+  return {beta, se, p:beta.map((v,j)=>se[j]>0?tTwoSided(Math.abs(v/se[j]),df):1), df, n};
+}
+function ridgeFit(X,y,lam){
+  const n=X.length, p=X[0].length, my=mean(y);
+  const A=Array.from({length:p},(_,i)=>{ const r=new Array(p).fill(0); r[i]=lam; return r; }), b=new Array(p).fill(0);
+  for (let i=0;i<n;i++){ const x=X[i], yc=y[i]-my; for (let a=0;a<p;a++){ b[a]+=x[a]*yc; for (let c=0;c<p;c++) A[a][c]+=x[a]*x[c]; } }
+  const inv=inverse(A); if (!inv) return null;
+  return {b0:my, beta:inv.map(r=>r.reduce((s,v,j)=>s+v*b[j],0))};
+}
+// Benjamini–Hochberg false discovery rate: sets .q on each item that has a .p
+function bh(items){
+  const v=items.filter(i=>i.p!=null && isFinite(i.p)).sort((a,b)=>a.p-b.p), m=v.length; let prev=1;
+  for (let i=m-1;i>=0;i--){ const q=Math.min(prev, v[i].p*m/(i+1)); v[i].q=q; prev=q; }
+  return m;
+}
+// lag-1 autocorrelation over consecutive calendar days
+function lag1(dates,v){
+  const a=[],b=[]; for (let i=1;i<dates.length;i++) if (daysBetween(dates[i-1],dates[i])===1){ a.push(v[i-1]); b.push(v[i]); }
+  if (a.length<8) return 0; const r=pearson(a,b); return r==null?0:r;
+}
+const residuals = (y,x) => { const f=ols(x,y); return f ? y.map((v,i)=>v-(f.a+f.b*x[i])) : y.slice(); };
+const strength = r => { r=Math.abs(r); return r<0.2?'very weak':r<0.4?'weak':r<0.6?'moderate':r<0.8?'strong':'very strong'; };
+function confOf(t){
+  if (t.p==null || !isFinite(t.p)) return null;
+  if (t.q!=null && t.q<0.1) return t.rep ? 'confirmed' : 'likely';
+  return t.p<0.05 ? 'hint' : null;
+}
+const confPill = c => c ? `<span class="pill conf-${c}">${CONF_LAB[c]}</span>` : '<span class="pill">Not clear</span>';
+
+/* =====================================================================
+   Data shaping
+   ===================================================================== */
+const UI = {range:90, slot:'all', dir:'same', base:true, mk:'anxiety', ok:null, pat:'mood', showAll:false, histLimit:60};
+const rangeStart = () => UI.range ? ymd(addDays(new Date(), -(UI.range-1))) : '0000-00-00';
+const inRange = d => d>=rangeStart() && d<=todayStr();
+
+function dayMap(slot){
+  const acc={};
+  for (const e of S.entries){
+    if (slot && slot!=='all' && e.slot!==slot) continue;
+    const a = acc[e.date] || (acc[e.date]={});
+    for (const m of METRICS){ const v=e.m[m.k]; if (v!=null) (a[m.k]||(a[m.k]=[])).push(v); }
+  }
+  const out={};
+  for (const d in acc){ out[d]={}; for (const k in acc[d]) out[d][k]=mean(acc[d][k]); }
+  return out;
+}
+// Overall = mood, energy, and the inverse of anxiety and stress (higher = better day)
+function addOverall(dm){
+  for (const d in dm){ const v=dm[d], c=[]; if (v.mood!=null) c.push(v.mood); if (v.energy!=null) c.push(v.energy); if (v.anxiety!=null) c.push(8-v.anxiety); if (v.stress!=null) c.push(8-v.stress); if (c.length>=2) v.overall=mean(c); }
+  return dm;
+}
+function ouraMeta(k){ return OURA_BY[k] || {k, label:(S.oura.labels&&S.oura.labels[k])||k, p:(S.oura.labels&&S.oura.labels[k])||k, unit:'', dec:2, custom:true}; }
+function ouraKeys(){
+  const seen=new Set(); for (const d in S.oura.days) for (const k in S.oura.days[d]) seen.add(k);
+  const known=OURA.filter(o=>seen.has(o.k)).map(o=>o.k);
+  const custom=[...seen].filter(k=>!OURA_BY[k]).sort((a,b)=>ouraMeta(a).label.localeCompare(ouraMeta(b).label));
+  return known.concat(custom);
+}
+const keysFor = (ctx,dir) => dir==='next' ? ctx.oks.filter(k=>SLEEPISH.includes(k) || !OURA_BY[k]) : ctx.oks;
+function fmtO(k,v){ const o=ouraMeta(k); if (v==null||!isFinite(v)) return '–'; if (k==='steps') return Math.round(v).toLocaleString(); return (+v).toFixed(o.dec)+o.unit; }
+// Difference from the person's own average over the previous 14 days (needs ≥4 of those days)
+function devMap(raw){
+  const out={};
+  for (const d in raw){ const b=[]; for (let i=1;i<=14;i++){ const v=raw[shift(d,-i)]; if (v!=null) b.push(v); } if (b.length>=4) out[d]=raw[d]-mean(b); }
+  return out;
+}
+function baseAt(raw,d){ const b=[]; for (let i=1;i<=14;i++){ const v=raw[shift(d,-i)]; if (v!=null) b.push(v); } return b.length>=4 ? mean(b) : null; }
+function buildCtx(){
+  const dm=addOverall(dayMap(UI.slot)), dmAll=addOverall(dayMap('all'));
+  const OUTS=[...METRICS.map(m=>m.k),'overall'];
+  const series=src=>{ const o={}; for (const k of OUTS){ const raw={}; for (const d in src) if (src[d][k]!=null) raw[d]=src[d][k]; o[k]={raw, dev:devMap(raw)}; } return o; };
+  const oks=ouraKeys(), ou={};
+  for (const k of oks){ const raw={}; for (const d in S.oura.days){ const v=S.oura.days[d][k]; if (v!=null&&isFinite(v)) raw[d]=v; } ou[k]={raw, dev:devMap(raw)}; }
+  return {dm, dmAll, ck:series(dm), ckAll:series(dmAll), ou, oks};
+}
+// Pair check-in days with Oura days for a direction. For "next", also returns the same-day Oura value (to control for it).
+function pairData(ctx, dir, mk, ok){
+  const C=ctx.ck[mk], O=ctx.ou[ok], r={ck:[],ou:[],ou0:[],ckRaw:[],ouRaw:[],dates:[]};
+  if (!C||!O) return r;
+  const off=OFF[dir], cS=UI.base?C.dev:C.raw, oS=UI.base?O.dev:O.raw;
+  for (const d of Object.keys(cS).sort()){
+    if (!inRange(d)) continue;
+    const od=off?shift(d,off):d, ov=oS[od]; if (ov==null) continue;
+    if (dir==='next'){ const o0=oS[d]; if (o0==null) continue; r.ou0.push(o0); }
+    r.ck.push(cS[d]); r.ou.push(ov); r.ckRaw.push(C.raw[d]); r.ouRaw.push(O.raw[od]); r.dates.push(d);
+  }
+  return r;
+}
+function entriesInView(){ return S.entries.filter(e=>inRange(e.date) && (UI.slot==='all' || e.slot===UI.slot)); }
+function trendOf(dm,mk){
+  const t=new Date(); const last=[],prev=[];
+  for (let i=0;i<7;i++){ const d=dm[ymd(addDays(t,-i))]; if (d&&d[mk]!=null) last.push(d[mk]); }
+  for (let i=7;i<14;i++){ const d=dm[ymd(addDays(t,-i))]; if (d&&d[mk]!=null) prev.push(d[mk]); }
+  const series=[]; for (let i=29;i>=0;i--){ const d=dm[ymd(addDays(t,-i))]; series.push(d&&d[mk]!=null?d[mk]:null); }
+  return {now:last.length?mean(last):null, delta:(last.length>=3&&prev.length>=3)?mean(last)-mean(prev):null, series, nLast:last.length};
+}
+function streak(){
+  const days=new Set(S.entries.map(e=>e.date)); let d=new Date(); let n=0;
+  if (!days.has(ymd(d))) d=addDays(d,-1);
+  while (days.has(ymd(d))){ n++; d=addDays(d,-1); }
+  return n;
+}
+
+/* =====================================================================
+   Analyses
+   ===================================================================== */
+let NTESTS = 0;
+// One check-in metric vs one Oura metric in one direction
+function assocTest(ctx, dir, mk, ok){
+  const P=pairData(ctx,dir,mk,ok), n=P.dates.length, t={dir,mk,ok,n,P};
+  if (n<10) return t;
+  const nx=dir==='next';
+  let pred=nx?P.ck:P.ou, out=nx?P.ou:P.ck;
+  t.predRaw=nx?P.ckRaw:P.ouRaw; t.outRaw=nx?P.ouRaw:P.ckRaw;
+  // today → tonight: remove what the night before already explains
+  let pr=pred, orr=out;
+  if (nx){ pr=residuals(pred,P.ou0); orr=residuals(out,P.ou0); }
+  const r=pearson(ranks(pr),ranks(orr)); if (r==null) return t;
+  const ac=Math.max(0, lag1(P.dates,pr)*lag1(P.dates,orr));
+  const neff=clamp(n*(1-ac)/(1+ac), Math.min(n,6), n);
+  const rr=clamp(r,-0.999999,0.999999), df=Math.max(2, neff-(nx?3:2));
+  t.rho=r; t.neff=neff; t.p=tTwoSided(Math.abs(rr)*Math.sqrt(df/(1-rr*rr)), df);
+  if (nx){ const f=regress(pred.map((v,i)=>[v,P.ou0[i]]), out); t.slope=f?f.beta[1]:null; }
+  else { const f=ols(pred,out); t.slope=f?f.b:null; }
+  const h=Math.floor(n/2);
+  if (h>=8){
+    const a=pearson(ranks(pr.slice(0,h)),ranks(orr.slice(0,h))), b=pearson(ranks(pr.slice(h)),ranks(orr.slice(h)));
+    t.halves=[a,b];
+    t.rep = a!=null && b!=null && Math.abs(r)>=0.2 && Math.sign(a)===Math.sign(r) && Math.sign(b)===Math.sign(r) && Math.abs(a)>=0.15 && Math.abs(b)>=0.15;
+  }
+  t.pred=pred; t.out=out;
+  return t;
+}
+function allAssoc(ctx){
+  const list=[];
+  for (const dir of ['same','prev','next']) for (const ok of keysFor(ctx,dir)) for (const m of METRICS) list.push(assocTest(ctx,dir,m.k,ok));
+  NTESTS=bh(list); list.forEach(t=>t.conf=confOf(t));
+  return list;
+}
+// Best single split point ("below X … above X …")
+function threshold(px,py){
+  const n=px.length; if (n<20) return null;
+  const idx=px.map((v,i)=>i).sort((a,b)=>px[a]-px[b]), xs=idx.map(i=>px[i]), ys=idx.map(i=>py[i]);
+  const cs=[0], cs2=[0]; ys.forEach((v,i)=>{ cs.push(cs[i]+v); cs2.push(cs2[i]+v*v); });
+  const sse=(a,b)=>{ const k=b-a, s=cs[b]-cs[a]; return (cs2[b]-cs2[a]) - s*s/k; };
+  const minSide=Math.max(6,Math.ceil(n*0.2)); let best=null;
+  for (let k=minSide;k<=n-minSide;k++){ if (xs[k]===xs[k-1]) continue; const e=sse(0,k)+sse(k,n); if (!best||e<best.e) best={k,e}; }
+  if (!best) return null;
+  const k=best.k, lo={x:xs.slice(0,k), y:ys.slice(0,k)}, hi={x:xs.slice(k), y:ys.slice(k)};
+  const res={thr:(xs[k-1]+xs[k])/2, loMean:mean(lo.y), hiMean:mean(hi.y), nlo:k, nhi:n-k};
+  const rl=lo.x.length>=8?pearson(ranks(lo.x),ranks(lo.y)):null, rh=hi.x.length>=8?pearson(ranks(hi.x),ranks(hi.y)):null;
+  if (rl!=null && rh!=null){ if (Math.abs(rh)<0.15 && Math.abs(rl)>=0.25) res.flat='above'; else if (Math.abs(rl)<0.15 && Math.abs(rh)>=0.25) res.flat='below'; }
+  return res;
+}
+function stepFor(k,xs){ if (STEP[k]) return STEP[k]; const s=sd(xs||[]); if (!s) return 1; const p=Math.pow(10,Math.floor(Math.log10(s))); return Math.max(p, Math.round(s/p)*p); }
+function stepLabel(k,step){ const o=ouraMeta(k), u=o.unit.trim(); if (k==='steps') return step.toLocaleString()+' steps'; if (!u) return o.custom ? String(+step.toPrecision(2)) : step+' points'; return step+(u==='%'?'%':' '+u); }
+function unitEffect(t){
+  if (t.slope==null) return '';
+  const o=ouraMeta(t.ok), m=M[t.mk], rel=UI.base?' (compared with your recent normal)':'';
+  if (t.dir==='next') return `Each extra point of ${m.label.toLowerCase()} during the day goes with about ${sgnN(t.slope)}${o.unit} ${o.p} that night${rel}.`;
+  const st=stepFor(t.ok,t.predRaw), e=t.slope*st;
+  return `Each extra ${stepLabel(t.ok,st)} of ${o.p}${t.dir==='prev'?' the day before':''} goes with about ${sgn(e,1)} ${m.label.toLowerCase()} points${rel}.`;
+}
+function thrText(t,th){
+  if (!th) return '';
+  const m=M[t.mk], o=ouraMeta(t.ok);
+  const flat=th.flat ? ` Most of the change happens ${th.flat==='above'?'below':'above'} that point.` : '';
+  if (t.dir==='next') return `On days your ${m.label.toLowerCase()} averaged above ${th.thr.toFixed(1)}, ${o.p} that night averaged ${fmtO(t.ok,th.hiMean)}; otherwise ${fmtO(t.ok,th.loMean)}.${flat}`;
+  return `Below about ${fmtO(t.ok,th.thr)} ${o.p}${t.dir==='prev'?' the day before':''}, ${m.label.toLowerCase()} averaged ${fmt(th.loMean)}; above it, ${fmt(th.hiMean)}.${flat}`;
+}
+function assocTitle(t){
+  const o=ouraMeta(t.ok), m=M[t.mk], up=t.rho>0;
+  if (t.dir==='next') return `On days your ${m.label.toLowerCase()} is higher, your ${o.p} that night tends to be ${up?'higher':'lower'}.`;
+  return `When your ${o.p} ${t.dir==='prev'?'was higher the day before':'is higher'}, your ${m.label.toLowerCase()} tends to be ${up?'higher':'lower'}.`;
+}
+function assocDetails(t){
+  const halves = t.halves && t.halves[0]!=null && t.halves[1]!=null ? `First half of your data: ${sgn(t.halves[0],2)}; second half: ${sgn(t.halves[1],2)}.` : 'Not enough days yet to check both halves of your data.';
+  return esc(`Rank correlation ${sgn(t.rho,2)} (${strength(t.rho)}) over ${t.n} days, counted as about ${Math.round(t.neff)} independent days because neighbouring days resemble each other. p = ${fp(t.p)}; after correcting for the ${NTESTS} comparisons the app runs, q = ${fp(t.q)}. ${halves} ${t.dir==='next'?'Allows for the night before. ':''}${UI.base?'Each day is compared with your 14-day normal.':'Uses raw values.'}`);
+}
+
+// Tags: which tags each check-in counts as having
+function entryTagSets(scope){
+  const byDay={}, res=new Map();
+  S.entries.forEach(e=>(byDay[e.date]||(byDay[e.date]=[])).push(e));
+  for (const d in byDay){
+    const acc=new Set();
+    byDay[d].sort((a,b)=>a.ts-b.ts).forEach(e=>{ if (scope==='day'){ e.tags.forEach(t=>acc.add(t)); res.set(e.id,new Set(acc)); } else res.set(e.id,new Set(e.tags)); });
+  }
+  return res;
+}
+// Fit, dropping the rarest tag columns if the design is singular (e.g. two tags always together)
+function fitCols(rows, cols, cluster){
+  let use=cols.map((c,j)=>j).filter(j=>{ let lo=Infinity, hi=-Infinity; for (const r of rows){ const v=r.x[j]; if (v<lo) lo=v; if (v>hi) hi=v; } return lo!==hi; });
+  for (let tries=0; tries<6 && use.length; tries++){
+    const f=regress(rows.map(r=>use.map(j=>r.x[j])), rows.map(r=>r.y), cluster?rows.map(r=>r.g):null);
+    if (f){ const out={}; use.forEach((j,i)=>out[cols[j]]={b:f.beta[i+1], se:f.se[i+1], p:f.p[i+1]}); return out; }
+    const tagIdx=use.filter(j=>cols[j].startsWith('t:')); if (!tagIdx.length) return null;
+    use=use.filter(j=>j!==tagIdx[tagIdx.length-1]);
+  }
+  return null;
+}
+function tagModel(ctx){
+  const ents=entriesInView(), eff=entryTagSets(S.settings.tagScope), cnt={};
+  ents.forEach(e=>(eff.get(e.id)||new Set()).forEach(t=>cnt[t]=(cnt[t]||0)+1));
+  const tags=Object.keys(cnt).filter(t=>cnt[t]>=5 && ents.length-cnt[t]>=5).sort((a,b)=>cnt[b]-cnt[a]).slice(0,15);
+  const rows=tags.map(t=>({tag:t, n:cnt[t], cells:{}})), cells=[];
+  if (!tags.length) return {rows, cells};
+  const cols=[...tags.map(t=>'t:'+t),'slot:afternoon','slot:evening','weekend'];
+  for (const m of METRICS){
+    const data=[];
+    for (const e of ents){
+      const v=e.m[m.k]; if (v==null) continue; let y=v;
+      if (UI.base){ const b=baseAt(ctx.ck[m.k].raw,e.date); if (b==null) continue; y=v-b; }
+      const ts=eff.get(e.id)||new Set(), dw=parseYmd(e.date).getDay();
+      data.push({y, raw:v, g:e.date, x:[...tags.map(t=>ts.has(t)?1:0), e.slot==='afternoon'?1:0, e.slot==='evening'?1:0, (dw===0||dw===6)?1:0]});
+    }
+    if (data.length<20) continue;
+    const full=fitCols(data,cols,true); if (!full) continue;
+    const dates=[...new Set(data.map(r=>r.g))].sort(), mid=dates[Math.floor(dates.length/2)];
+    const h1=fitCols(data.filter(r=>r.g<mid),cols,true), h2=fitCols(data.filter(r=>r.g>=mid),cols,true);
+    tags.forEach((tag,j)=>{
+      const c=full['t:'+tag]; if (!c) return;
+      const w=data.filter(r=>r.x[j]===1), wo=data.filter(r=>r.x[j]===0); if (w.length<5||wo.length<5) return;
+      const a=h1&&h1['t:'+tag], b=h2&&h2['t:'+tag];
+      const rep=!!(a&&b&&Math.abs(c.b)>=0.3&&Math.sign(a.b)===Math.sign(c.b)&&Math.sign(b.b)===Math.sign(c.b)&&Math.abs(a.b)>=0.2&&Math.abs(b.b)>=0.2);
+      const cell={tag, mk:m.k, b:c.b, se:c.se, p:c.p, raw:mean(w.map(r=>r.raw))-mean(wo.map(r=>r.raw)), n1:w.length, n2:wo.length, rep, halves:[a?a.b:null, b?b.b:null]};
+      rows[j].cells[m.k]=cell; cells.push(cell);
+    });
+  }
+  bh(cells); cells.forEach(c=>c.conf=confOf(c));
+  const score=r=>Math.max(0,...Object.values(r.cells).filter(c=>CONF_RANK(c.conf)>0).map(c=>Math.abs(c.b)));
+  rows.sort((a,b)=>score(b)-score(a)||b.n-a.n);
+  return {rows, cells};
+}
+// Tags on a day → that night's Oura numbers (day-level, controls for the night before)
+function tagSleepModel(ctx){
+  const keys=['sleep_score','total_sleep_h','avg_hrv','lowest_hr','latency_min','readiness_score'].filter(k=>ctx.ou[k]).slice(0,5);
+  const res={keys, rows:[], cells:[]}; if (!keys.length) return res;
+  const dayTags={}; S.entries.forEach(e=>{ const s=dayTags[e.date]||(dayTags[e.date]=new Set()); e.tags.forEach(t=>s.add(t)); });
+  const dates=Object.keys(dayTags).filter(inRange).sort(), cnt={};
+  dates.forEach(d=>dayTags[d].forEach(t=>cnt[t]=(cnt[t]||0)+1));
+  const tags=Object.keys(cnt).filter(t=>cnt[t]>=5 && dates.length-cnt[t]>=5).sort((a,b)=>cnt[b]-cnt[a]).slice(0,12);
+  if (!tags.length) return res;
+  res.rows=tags.map(t=>({tag:t, n:cnt[t], cells:{}}));
+  const cols=[...tags.map(t=>'t:'+t),'weekend','prev'];
+  for (const k of keys){
+    const O=ctx.ou[k], src=UI.base?O.dev:O.raw, data=[];
+    for (const d of dates){ const y=src[shift(d,1)], y0=src[d]; if (y==null||y0==null) continue; const dw=parseYmd(d).getDay();
+      data.push({y, raw:O.raw[shift(d,1)], g:d, x:[...tags.map(t=>dayTags[d].has(t)?1:0), (dw===0||dw===6)?1:0, y0]}); }
+    if (data.length<20) continue;
+    const full=fitCols(data,cols,false); if (!full) continue;
+    const mid=data[Math.floor(data.length/2)].g;
+    const h1=fitCols(data.filter(r=>r.g<mid),cols,false), h2=fitCols(data.filter(r=>r.g>=mid),cols,false);
+    const sdY=sd(data.map(r=>r.raw))||1;
+    tags.forEach((tag,j)=>{
+      const c=full['t:'+tag]; if (!c) return;
+      const w=data.filter(r=>r.x[j]===1), wo=data.filter(r=>r.x[j]===0); if (w.length<5||wo.length<5) return;
+      const a=h1&&h1['t:'+tag], b=h2&&h2['t:'+tag];
+      const rep=!!(a&&b&&Math.abs(c.b)>=0.25*sdY&&Math.sign(a.b)===Math.sign(c.b)&&Math.sign(b.b)===Math.sign(c.b));
+      const cell={tag, ok:k, b:c.b, p:c.p, sdY, raw:mean(w.map(r=>r.raw))-mean(wo.map(r=>r.raw)), n1:w.length, n2:wo.length, rep, halves:[a?a.b:null, b?b.b:null]};
+      res.rows[j].cells[k]=cell; res.cells.push(cell);
+    });
+  }
+  bh(res.cells); res.cells.forEach(c=>c.conf=confOf(c));
+  return res;
+}
+// Heart rate in the hour before each check-in vs the usual for that time of day
+function hrDeltaMap(){
+  const hr=S.hr||{}, days=Object.keys(hr); if (days.length<5) return null;
+  const win=(bins,b0,b1)=>{ let s=0,c=0; for (let b=Math.max(0,b0); b<=b1; b++){ const v=bins[b]; if (v>0){ s+=v; c++; } } return c>=3 ? s/c : null; };
+  const out=new Map();
+  for (const e of S.entries){
+    const bins=hr[e.date]; if (!bins) continue;
+    const dt=new Date(e.ts), bEnd=Math.floor((dt.getHours()*60+dt.getMinutes())/5), b0=bEnd-12;
+    const pre=win(bins,b0,bEnd); if (pre==null) continue;
+    const others=[]; for (const d of days){ if (d===e.date) continue; const v=win(hr[d],b0,bEnd); if (v!=null) others.push(v); }
+    if (others.length<5) continue;
+    const base=median(others); out.set(e.id,{pre, base, delta:pre-base});
+  }
+  return out;
+}
+function hrModel(){
+  const map=hrDeltaMap(); if (!map) return null;
+  const ents=entriesInView().filter(e=>map.has(e.id)), tests=[];
+  for (const m of METRICS){
+    const es=ents.filter(e=>e.m[m.k]!=null); if (es.length<15) continue;
+    const x=es.map(e=>map.get(e.id).delta), y=es.map(e=>e.m[m.k]);
+    const st=spearman(x,y); if (!st) continue;
+    const f=ols(x,y), h=Math.floor(es.length/2);
+    const a=h>=8?pearson(ranks(x.slice(0,h)),ranks(y.slice(0,h))):null, b=h>=8?pearson(ranks(x.slice(h)),ranks(y.slice(h))):null;
+    tests.push({mk:m.k, rho:st.rho, p:st.p, n:es.length, slope:f?f.b:null, x, y, halves:[a,b],
+      rep:a!=null&&b!=null&&Math.abs(st.rho)>=0.2&&Math.sign(a)===Math.sign(st.rho)&&Math.sign(b)===Math.sign(st.rho)&&Math.abs(a)>=0.15&&Math.abs(b)>=0.15});
+  }
+  bh(tests); tests.forEach(t=>t.conf=confOf(t));
+  return {map, tests, n:ents.length};
+}
+// Two Oura signals that are both "off" — is the combination worse than either alone?
+function combos(ctx){
+  const cand=[];
+  for (const k of ctx.oks){
+    const P=pairData(ctx,'same','overall',k); if (P.dates.length<24) continue;
+    const r=pearson(ranks(P.ou),ranks(P.ck)); if (r==null||Math.abs(r)<0.15) continue;
+    const mp={}, W={}; P.dates.forEach((d,i)=>{ mp[d]=P.ou[i]; W[d]=P.ck[i]; }); cand.push({k,r,mp,W});
+  }
+  cand.sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
+  // pick up to 6 signals that aren't near-duplicates of one already picked (e.g. sleep score vs sleep efficiency)
+  const top=[], tests=[];
+  const corrOf=(a,b)=>{ const ds=Object.keys(a.mp).filter(d=>b.mp[d]!=null); return ds.length>=10?pearson(ds.map(d=>a.mp[d]),ds.map(d=>b.mp[d])):null; };
+  for (const c of cand){ if (top.length>=6) break; if (top.every(t=>{ const r=corrOf(t,c); return r==null||Math.abs(r)<=0.75; })) top.push(c); }
+  for (let i=0;i<top.length;i++) for (let j=i+1;j<top.length;j++){
+    const a=top[i], b=top[j], ds=Object.keys(a.mp).filter(d=>b.mp[d]!=null); if (ds.length<24) continue;
+    const va=ds.map(d=>a.mp[d]), vb=ds.map(d=>b.mp[d]), w=ds.map(d=>a.W[d]);
+    const ma=median(va), mb=median(vb), badA=va.map(v=>a.r>0?v<ma:v>ma), badB=vb.map(v=>b.r>0?v<mb:v>mb);
+    const both=[], rest=[]; w.forEach((v,x)=>(badA[x]&&badB[x]?both:rest).push(v));
+    if (both.length<6||rest.length<6) continue;
+    const wt=welch(both,rest); if (!wt) continue;
+    const diffOf=bad=>mean(w.filter((_,x)=>bad[x]))-mean(w.filter((_,x)=>!bad[x]));
+    tests.push({a:a.k, b:b.k, ra:a.r, rb:b.r, diff:wt.diff, p:wt.p, nb:both.length, nr:rest.length, dA:diffOf(badA), dB:diffOf(badB)});
+  }
+  const m=bh(tests);
+  return tests.filter(t=>t.q<0.1 && Math.abs(t.diff)>=Math.max(Math.abs(t.dA),Math.abs(t.dB))+0.15)
+    .sort((x,y)=>Math.abs(y.diff)-Math.abs(x.diff)).slice(0,2).map(t=>Object.assign(t,{m, conf:'likely'}));
+}
+// Morning outlook: ridge regression of "overall vs your normal" on last night's Oura data, validated out-of-sample
+function outlook(ctx){
+  const W=ctx.ckAll.overall; if (!W) return null;
+  const td=todayStr(), keys=ctx.oks.filter(k=>SLEEPISH.includes(k)); if (!keys.length) return null;
+  const cut=ymd(addDays(new Date(),-180));
+  const dates=Object.keys(W.dev).filter(d=>d<td && d>=cut).sort();
+  const use=keys.filter(k=>dates.filter(d=>ctx.ou[k].dev[d]!=null).length>=dates.length*0.8);
+  if (!use.length) return null;
+  const rows=dates.filter(d=>use.some(k=>ctx.ou[k].dev[d]!=null));
+  if (rows.length<21) return {ok:false, n:rows.length};
+  const st=use.map(k=>{ const v=rows.map(d=>ctx.ou[k].dev[d]).filter(v=>v!=null); return {k, m:mean(v), s:sd(v)||1}; });
+  const wk=d=>{ const g=parseYmd(d).getDay(); return g===0||g===6?1:0; };
+  const wkv=rows.map(wk), wm=mean(wkv), ws=sd(wkv)||1;
+  const feat=d=>st.map(s=>{ const v=ctx.ou[s.k].dev[d]; return v==null?0:(v-s.m)/s.s; }).concat([(wk(d)-wm)/ws]);
+  const X=rows.map(feat), y=rows.map(d=>W.dev[d]), n=rows.length, lam=3, K=5, preds=new Array(n);
+  for (let f=0;f<K;f++){
+    const lo=Math.floor(n*f/K), hi=Math.floor(n*(f+1)/K), tx=[], ty=[];
+    for (let i=0;i<n;i++) if (i<lo||i>=hi){ tx.push(X[i]); ty.push(y[i]); }
+    const fit=ridgeFit(tx,ty,lam); if (!fit) return {ok:false, n};
+    for (let i=lo;i<hi;i++) preds[i]=fit.b0+X[i].reduce((s,v,j)=>s+v*fit.beta[j],0);
+  }
+  const rcv=pearson(preds,y), res={ok:rcv!=null && rcv>=0.25, rcv, n};
+  if (!res.ok) return res;
+  const fit=ridgeFit(X,y,lam);
+  if (st.filter(s=>ctx.ou[s.k].dev[td]!=null).length<Math.ceil(st.length/2)){ res.noToday=true; return res; }
+  const z=feat(td), pred=fit.b0+z.reduce((s,v,j)=>s+v*fit.beta[j],0), sy=sd(y)||1;
+  res.pred=pred; res.verdict=pred<=-0.35*sy?'harder':pred>=0.35*sy?'better':'typical';
+  const sign=res.verdict==='better'?1:-1;
+  res.reasons=res.verdict==='typical'?[]:st.map((s,j)=>({k:s.k, c:fit.beta[j]*z[j], z:z[j]})).filter(c=>ctx.ou[c.k].dev[td]!=null && c.c*sign>0.05*sy).sort((a,b)=>sign*(b.c-a.c)).slice(0,2);
+  return res;
+}
+function stability(ctx){
+  const t=new Date(), dA=ctx.dmAll, from30=ymd(addDays(t,-29));
+  return METRICS.map(m=>{
+    const ser=(a,b)=>{ const v=[]; for (let i=b;i>=a;i--){ const d=dA[ymd(addDays(t,-i))]; v.push(d&&d[m.k]!=null?d[m.k]:null); } return v; };
+    const masd=v=>{ const df=[]; for (let i=1;i<v.length;i++) if (v[i]!=null&&v[i-1]!=null) df.push(Math.abs(v[i]-v[i-1])); return df.length>=4?mean(df):null; };
+    const byDay={}; S.entries.forEach(e=>{ if (e.m[m.k]==null||e.date<from30) return; (byDay[e.date]||(byDay[e.date]=[])).push(e.m[m.k]); });
+    const ranges=Object.values(byDay).filter(v=>v.length>=2).map(v=>Math.max(...v)-Math.min(...v));
+    return {k:m.k, now:masd(ser(0,13)), prev:masd(ser(14,27)), within:ranges.length>=4?mean(ranges):null};
+  });
+}
+function dataQuality(ctx){
+  if (!S.entries.length) return null;
+  const first=S.entries[0].date, start=rangeStart()>first?rangeStart():first, td=todayStr(), days=[];
+  for (let d=parseYmd(start); ymd(d)<=td; d=addDays(d,1)) days.push(ymd(d));
+  const per={}, slotN={}; S.entries.forEach(e=>{ if (e.date>=start){ per[e.date]=(per[e.date]||0)+1; slotN[e.slot]=(slotN[e.slot]||0)+1; } });
+  const res={days:days.length, withC:days.filter(d=>per[d]).length, total:days.reduce((s,d)=>s+(per[d]||0),0), goal:Math.max(1,S.settings.reminders.length), slotN, bias:null};
+  res.rate=res.total/(res.days*res.goal);
+  const key=['readiness_score','sleep_score','avg_hrv'].find(k=>ctx.ou[k]);
+  if (key){
+    const past=days.filter(d=>d<td), miss=past.filter(d=>!per[d]).map(d=>ctx.ou[key].raw[d]).filter(v=>v!=null), have=past.filter(d=>per[d]).map(d=>ctx.ou[key].raw[d]).filter(v=>v!=null);
+    if (miss.length>=5 && have.length>=5){ const w=welch(miss,have); if (w && w.p<0.1 && Math.abs(w.diff)>=sd(have)*0.3) res.bias={key, miss:w.m1, have:w.m2, nMiss:miss.length, p:w.p}; }
+  }
+  return res;
+}
+function suggestions(A){
+  const out=[], seen=new Set(), add=(name,why,focus,rank)=>{ if (seen.has(name)) return; seen.add(name); out.push({name,why,focus,rank}); };
+  A.tm.cells.filter(c=>CONF_RANK(c.conf)>0).sort((a,b)=>CONF_RANK(b.conf)-CONF_RANK(a.conf)||Math.abs(b.b)-Math.abs(a.b)).forEach(c=>{
+    if (NON_LEVER.includes(c.tag)) return;
+    const harmful=GOOD_UP(c.mk)?c.b<0:c.b>0;
+    add(harmful?`Cut back on ${c.tag.toLowerCase()}`:`More ${c.tag.toLowerCase()}`, `"${c.tag}" goes with ${sgn(c.b,1)} ${M[c.mk].label.toLowerCase()}`, c.mk, CONF_RANK(c.conf));
+  });
+  A.assoc.filter(t=>t.dir==='same'&&CONF_RANK(t.conf)>0).sort((a,b)=>CONF_RANK(b.conf)-CONF_RANK(a.conf)||Math.abs(b.rho)-Math.abs(a.rho)).forEach(t=>{
+    const o=ouraMeta(t.ok), m=M[t.mk].label.toLowerCase(), r=CONF_RANK(t.conf);
+    if (['total_sleep_h','sleep_score','sleep_eff','deep_min','rem_min','latency_min'].includes(t.ok)){
+      const th=t.ok==='total_sleep_h'?threshold(t.predRaw,t.outRaw):null;
+      add('A fixed bedtime for more sleep', `${o.label} lines up with your ${m}${th?`; aim for ${fmtO('total_sleep_h',th.thr)} or more`:''}`, t.mk, r);
+    } else if (['steps','activity_score','active_cal'].includes(t.ok)) add('A daily 20-minute walk', `${o.label} lines up with your ${m}`, t.mk, r);
+    else if (['avg_hrv','readiness_score','lowest_hr','avg_hr','stress_high_min','recovery_high_min'].includes(t.ok)) add('No screens in the last hour before bed', `${o.label}, a recovery signal, lines up with your ${m}`, t.mk, r);
+  });
+  return out.sort((a,b)=>b.rank-a.rank).slice(0,4);
+}
+// Experiments
+const expEnd = x => shift(x.start, x.days-1);
+const expLast = x => x.ended && x.ended<expEnd(x) ? x.ended : expEnd(x);
+function activeExp(){ const t=todayStr(); return S.experiments.find(x=>!x.ended && t<=expEnd(x)); }
+function expResult(x){
+  const td=todayStr(), endEff=expLast(x)<td?expLast(x):td;
+  const phase = td<x.start ? 'upcoming' : (!x.ended && td<=expEnd(x)) ? 'running' : 'done';
+  const dayNum = phase==='running' ? daysBetween(x.start,td)+1 : null;
+  const bStart=shift(x.start,-28), dmA=addOverall(dayMap('all'));
+  const fitK=getV=>{
+    const rows=[]; for (let d=parseYmd(bStart); ymd(d)<=endEff; d=addDays(d,1)){ const ds=ymd(d), v=getV(ds); if (v==null) continue; const ex=ds>=x.start?1:0, g=d.getDay(); rows.push({y:v, x:[ex, g===0||g===6?1:0], ex}); }
+    const ne=rows.filter(r=>r.ex).length, nb=rows.length-ne; if (ne<5||nb<5) return {ne,nb};
+    const f=regress(rows.map(r=>r.x), rows.map(r=>r.y)); if (!f) return {ne,nb};
+    const tc=tCrit(f.df);
+    return {ne, nb, diff:f.beta[1], lo:f.beta[1]-tc*f.se[1], hi:f.beta[1]+tc*f.se[1], p:f.p[1], expMean:mean(rows.filter(r=>r.ex).map(r=>r.y)), baseMean:mean(rows.filter(r=>!r.ex).map(r=>r.y))};
+  };
+  const outs={}; for (const k of ['overall',...METRICS.map(m=>m.k)]) outs[k]=fitK(ds=>dmA[ds]&&dmA[ds][k]!=null?dmA[ds][k]:null);
+  const oura={}; for (const k of ['sleep_score','total_sleep_h','avg_hrv']) if (Object.values(S.oura.days).some(o=>o[k]!=null)) oura[k]=fitK(ds=>S.oura.days[ds]&&S.oura.days[ds][k]!=null?S.oura.days[ds][k]:null);
+  let expDays=0; if (phase!=='upcoming') for (let d=parseYmd(x.start); ymd(d)<=endEff; d=addDays(d,1)) if (dmA[ymd(d)]) expDays++;
+  return {phase, dayNum, outs, oura, expDays};
+}
+function verdictOf(k,r,phase){
+  if (!r || r.diff==null) return {t: phase==='running' ? 'Too early to tell' : 'Not enough check-ins to compare', c:''};
+  const good=GOOD_UP(k)?1:-1, better=r.diff*good>0;
+  if (r.lo>0 || r.hi<0) return better ? {t:'Clear improvement', c:'good'} : {t:'Clear worsening', c:'bad'};
+  if (Math.abs(r.diff)<0.25) return {t:'No clear change', c:''};
+  return {t:`Possible ${better?'improvement':'worsening'}, not clear yet`, c:''};
+}
+// PHQ-4
+const phqScore = p => ({total:p.items.reduce((s,v)=>s+v,0), anx:p.items[0]+p.items[1], dep:p.items[2]+p.items[3]});
+const phqBand = t => t<=2 ? 'None to minimal' : t<=5 ? 'Mild' : t<=8 ? 'Moderate' : 'Severe';
+function phqDue(){
+  if (!S.settings.phq4) return false;
+  if (S.settings.phqSnooze && Date.now()<S.settings.phqSnooze) return false;
+  const last=S.phq[S.phq.length-1]; return !last || Date.now()-last.ts > 6.5*864e5;
+}
+function phqCalib(ctx){
+  const L=S.phq; if (L.length<6) return {n:L.length};
+  const rows=L.map(p=>{ const a=[], md=[]; for (let i=0;i<14;i++){ const d=ctx.dmAll[shift(p.date,-i)]; if (d){ if (d.anxiety!=null) a.push(d.anxiety); if (d.mood!=null) md.push(d.mood); } }
+    const s=phqScore(p); return {anx:s.anx, dep:s.dep, ma:a.length>=5?mean(a):null, mm:md.length>=5?mean(md):null}; });
+  const a=rows.filter(r=>r.ma!=null), m=rows.filter(r=>r.mm!=null);
+  return {n:L.length, anx:a.length>=6?spearman(a.map(r=>r.anx),a.map(r=>r.ma)):null, dep:m.length>=6?spearman(m.map(r=>r.dep),m.map(r=>r.mm)):null};
+}
+function careCheck(ctx){
+  const out=[], days=[];
+  for (let i=0;i<7;i++){ const d=ctx.dmAll[ymd(addDays(new Date(),-i))]; if (d) days.push(d); }
+  const last5=days.slice(0,5);
+  if (last5.length>=4){
+    const lowMood=last5.every(d=>d.mood!=null&&d.mood<=2), highAnx=last5.every(d=>d.anxiety!=null&&d.anxiety>=6);
+    if (lowMood||highAnx) out.push({care:true, k:'Worth a pause', title:lowMood?'Your mood has been low for several days':'Your anxiety has been high for several days',
+      body:"That's worth taking seriously, whatever the data says about why. Consider reaching out to someone you trust or a health professional. In the US you can call or text 988 at any time."});
+  }
+  const lp=S.phq[S.phq.length-1];
+  if (lp && Date.now()-lp.ts<14*864e5){
+    const s=phqScore(lp);
+    if (s.anx>=3||s.dep>=3) out.push({care:true, k:'Weekly check', title:`Your latest weekly check scored ${s.total} of 12 (${phqBand(s.total).toLowerCase()})`,
+      body:`${s.anx>=3?'The anxiety questions reached the usual follow-up point. ':''}${s.dep>=3?'The mood questions reached the usual follow-up point. ':''}It's a screen, not a diagnosis, but worth sharing with a doctor or therapist, especially if it stays there. If you're struggling right now, call or text 988 (US).`});
+  }
+  return out;
+}
+
+/* =====================================================================
+   Check-in form
+   ===================================================================== */
+let FORM = {m:{}, tags:new Set(), note:'', ts:null, editId:null};
+let PHQF = {open:false, items:[null,null,null,null], result:null};
+const fmtWhen = ts => new Date(ts).toLocaleString([], {weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+const toLocalInput = ts => { const d=new Date(ts); return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes()); };
+
+function buildForm(){
+  const f=$('#checkin-form');
+  f.innerHTML = METRICS.map(m=>`
+    <div class="card metric" data-k="${m.k}" style="--mc:var(${m.color})">
+      <div class="metric-h"><h3>${m.q}</h3><button type="button" class="link" data-act="clear-metric" data-k="${m.k}" hidden>clear</button></div>
+      <div class="scale" role="radiogroup" aria-label="${m.label}, 1 to 7">
+        ${[1,2,3,4,5,6,7].map(v=>`<button type="button" role="radio" aria-checked="false" data-act="pick" data-k="${m.k}" data-v="${v}" aria-label="${m.label} ${v} of 7">${v}</button>`).join('')}
+      </div>
+      <div class="ends"><span>1 · ${m.lo}</span><span>7 · ${m.hi}</span></div>
+    </div>`).join('') + `
+    <div class="card"><div class="metric-h"><h3>What's going on? <span class="opt">optional</span></h3></div><div class="chips" id="tag-chips"></div></div>
+    <div class="card"><label class="metric-h" for="note"><h3>One-line note <span class="opt">optional</span></h3></label>
+      <input id="note" type="text" maxlength="140" placeholder="Anything worth remembering?" enterkeyhint="done"></div>
+    <div class="whenrow"><span id="when-label"></span><button type="button" class="link" data-act="change-when">Change time</button>
+      <input type="datetime-local" id="when-input" hidden aria-label="Check-in time"></div>
+    <button type="submit" class="primary big" id="save-btn">Save check-in</button>
+    <p class="muted small" style="text-align:center">Skip anything you don't want to rate. Takes about 20 seconds.</p>`;
+  renderTagChips(); syncForm();
+}
+function renderTagChips(){
+  $('#tag-chips').innerHTML = S.settings.tags.map(t=>`<button type="button" class="chip" data-act="tag" data-t="${esc(t)}" aria-pressed="false">${esc(t)}</button>`).join('') || '<span class="muted small">No tags yet. Add some in the Data tab.</span>';
+}
+function syncForm(){
+  $$('.metric').forEach(box=>{
+    const k=box.dataset.k, v=FORM.m[k];
+    $$('.scale button',box).forEach(b=>{ const on=+b.dataset.v===v; b.classList.toggle('on',on); b.setAttribute('aria-checked',on); });
+    $('[data-act=clear-metric]',box).hidden = v==null;
+  });
+  $$('#tag-chips .chip').forEach(c=>{ const on=FORM.tags.has(c.dataset.t); c.classList.toggle('on',on); c.setAttribute('aria-pressed',on); });
+  $('#note').value = FORM.note;
+  $('#when-label').textContent = FORM.ts ? fmtWhen(FORM.ts) : 'Now · ' + new Date().toLocaleString([], {weekday:'short', hour:'numeric', minute:'2-digit'});
+  $('#save-btn').textContent = FORM.editId ? 'Update check-in' : 'Save check-in';
+  const eb=$('#edit-banner');
+  if (FORM.editId){ eb.hidden=false; eb.innerHTML=`Editing the check-in from ${esc(fmtWhen(FORM.ts))}. <button class="link" data-act="cancel-edit">Cancel</button>`; }
+  else eb.hidden=true;
+}
+function resetForm(){ FORM={m:{}, tags:new Set(), note:'', ts:null, editId:null}; $('#when-input').hidden=true; syncForm(); }
+
+function submitCheckin(ev){
+  ev.preventDefault();
+  if (!Object.keys(FORM.m).length){ toast('Tap at least one rating first'); return; }
+  const ts = FORM.ts || Date.now();
+  if (ts > Date.now()+60000){ toast("That time is in the future"); return; }
+  const dt=new Date(ts);
+  const rec={id:FORM.editId||uid(), ts, date:ymd(dt), slot:slotOf(dt.getHours()), m:Object.assign({},FORM.m), tags:[...FORM.tags], note:FORM.note.trim()};
+  if (FORM.editId){
+    const i=S.entries.findIndex(e=>e.id===FORM.editId);
+    if (i>=0){ if (S.entries[i].demo) rec.demo=true; S.entries[i]=rec; } else S.entries.push(rec);
+  } else S.entries.push(rec);
+  S.entries.sort((a,b)=>a.ts-b.ts);
+  const wasEdit=!!FORM.editId;
+  save(); resetForm(); renderHero(); renderPhq();
+  const st=streak();
+  toast(wasEdit ? 'Updated ✓' : (st>=2 ? `Saved ✓  ·  ${st}-day streak` : 'Saved ✓'));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function backupDue(){ if (S.entries.length<14) return false; const lb=S.settings.lastBackup; return !lb || (Date.now()-lb) > 30*864e5; }
+function renderHero(){
+  const now=new Date(), h=now.getHours();
+  const greet=h<12?'Good morning':h<18?'Good afternoon':'Good evening';
+  const today=todayStr(); const n=S.entries.filter(e=>e.date===today).length;
+  const times=S.settings.reminders; const goal=Math.max(1,times.length);
+  const passed=times.filter(t=>{ const [hh,mm]=t.split(':').map(Number); return hh*60+mm <= h*60+now.getMinutes(); }).length;
+  let sub;
+  if (n===0) sub = passed>0 ? 'A check-in is waiting whenever you are ready.' : 'How are you doing right now?';
+  else if (n<passed) sub = 'Another check-in is due if you have a moment.';
+  else sub = n>=goal ? "You're all caught up for today." : 'Nice. Next one later today.';
+  const st=streak();
+  let dots=''; for (let i=0;i<goal;i++) dots+=`<i class="${i<n?'on':''}"></i>`;
+  const ax=activeExp();
+  let expLine='';
+  if (ax){ expLine = today<ax.start ? `Experiment starts ${shortDate(ax.start)}: <b>${esc(ax.name)}</b>` : `Experiment: <b>${esc(ax.name)}</b> · day ${daysBetween(ax.start,today)+1} of ${ax.days}`; }
+  $('#hero').innerHTML=`<h1>${greet}</h1><p>${sub}</p>
+    <div class="dots" aria-label="${n} of ${goal} check-ins today">${dots}<span>${n>goal?`${n} check-ins today (goal ${goal})`:`${n} of ${goal} today`}${st>=2?` · ${st}-day streak`:''}</span></div>
+    ${expLine?`<p class="exp">${expLine}</p>`:''}
+    ${backupDue()?'<p class="small" style="margin-top:10px">It has been a while since your last backup. <a href="#data" style="color:var(--accent)">Back up in the Data tab</a>.</p>':''}`;
+  $('#today-label').textContent = now.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
+}
+function phqMessage(s){
+  if (s.anx<3 && s.dep<3) return 'Thanks. Over time this is compared with your daily ratings, so you can see how well they track.';
+  return `${s.anx>=3?'The anxiety questions reached the point where screening guidelines suggest following up with a professional. ':''}${s.dep>=3?'The mood questions reached the point where screening guidelines suggest following up with a professional. ':''}This isn't a diagnosis, but it's worth sharing with a doctor or therapist, especially if it stays there. If you're struggling right now, you can call or text 988 (US).`;
+}
+function renderPhq(){
+  const el=$('#phq-card'); if (!el) return;
+  if (PHQF.result){
+    const s=phqScore(PHQF.result);
+    el.innerHTML=`<div class="card"><span class="kicker">Weekly check</span><h3 style="margin-top:4px">${s.total} of 12 · ${phqBand(s.total)}</h3><p class="sub muted" style="margin:4px 0 0">Anxiety questions ${s.anx} of 6 · mood questions ${s.dep} of 6</p><p class="small" style="margin:8px 0 0">${esc(phqMessage(s))}</p><div class="row"><button class="btn" data-act="phq-done">Done</button></div></div>`;
+    return;
+  }
+  if (!PHQF.open){
+    el.innerHTML = phqDue() ? `<div class="card"><div class="ih"><h3>Weekly check</h3><span class="pill">4 questions</span></div><p class="muted small" style="margin:4px 0 10px">A short standard questionnaire (PHQ-4), once a week. It gives your daily ratings something steady to be compared with.</p><div class="row" style="margin-top:0"><button class="primary" data-act="phq-open">Start</button><button class="btn" data-act="phq-snooze">Not today</button><button class="link" data-act="phq-off">Turn off</button></div></div>` : '';
+    return;
+  }
+  el.innerHTML=`<div class="card"><h3>Over the last 2 weeks, how often have you been bothered by…</h3>${PHQ_ITEMS.map((q,i)=>`<p class="phq-q">${esc(q)}</p><div class="phq-o" role="radiogroup" aria-label="${esc(q)}">${PHQ_OPTS.map((o,v)=>`<button type="button" role="radio" aria-checked="${PHQF.items[i]===v}" class="${PHQF.items[i]===v?'on':''}" data-act="phq-pick" data-i="${i}" data-v="${v}">${o}</button>`).join('')}</div>`).join('')}
+    <div class="row"><button class="primary" data-act="phq-save" ${PHQF.items.some(v=>v==null)?'disabled':''}>Save weekly check</button><button class="link" data-act="phq-cancel">Cancel</button></div>
+    <p class="small muted" style="margin:8px 0 0">PHQ-4 (Kroenke et al., 2009). A screening tool, not a diagnosis.</p></div>`;
+}
+
+/* =====================================================================
+   Charts
+   ===================================================================== */
+function sparkSvg(vals,color){
+  const w=140,h=36,n=vals.length; const x=i=>3+(i/(n-1))*(w-6), y=v=>h-4-((v-1)/6)*(h-8);
+  let d='',pen=false,dots='';
+  vals.forEach((v,i)=>{ if (v==null){ pen=false; return; } d+=(pen?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1); pen=true; dots+=`<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="1.8" fill="var(${color})"/>`; });
+  if (!d) return '';
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="var(${color})" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`;
+}
+function scatterSvg(xs,ys,o){
+  const W=360,H=250,L=42,R=12,T=12,B=40;
+  const rg=(a,r)=>{ if (r) return [0.5,7.5]; let lo=Math.min(...a), hi=Math.max(...a); if (lo===hi){ lo-=1; hi+=1; } const p=(hi-lo)*0.08; return [lo-p,hi+p]; };
+  const [x0,x1]=rg(xs,o.xRating), [y0,y1]=rg(ys,o.yRating);
+  const X=v=>L+(v-x0)/(x1-x0)*(W-L-R), Y=v=>T+(1-(v-y0)/(y1-y0))*(H-T-B);
+  const tf=v=>Math.abs(v)>=1000?Math.round(v).toLocaleString():Math.abs(v)>=100?Math.round(v):+v.toFixed(Math.abs(v)>=10?0:1);
+  const ticks=(a,b,r)=>r?[1,2,3,4,5,6,7]:[0,1,2,3,4].map(i=>a+(b-a)*(0.06+0.88*i/4));
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter plot of ${esc(o.yl)} against ${esc(o.xl)}"><defs><clipPath id="cp-${o.id}"><rect x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}"/></clipPath></defs>`;
+  ticks(y0,y1,o.yRating).forEach(v=>s+=`<line class="ax" x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}"/><text class="tx" x="${L-6}" y="${(Y(v)+3).toFixed(1)}" text-anchor="end">${tf(v)}</text>`);
+  ticks(x0,x1,o.xRating).forEach(v=>s+=`<text class="tx" x="${X(v).toFixed(1)}" y="${H-B+14}" text-anchor="middle">${tf(v)}</text>`);
+  s+=`<text class="tt" x="${(L+W-R)/2}" y="${H-6}" text-anchor="middle">${esc(o.xl)}</text><text class="tt" transform="translate(11 ${(T+H-B)/2}) rotate(-90)" text-anchor="middle">${esc(o.yl)}</text>`;
+  if (o.thr!=null) s+=`<line x1="${X(o.thr).toFixed(1)}" x2="${X(o.thr).toFixed(1)}" y1="${T}" y2="${H-B}" stroke="var(--c-anxiety)" stroke-width="1.5" stroke-dasharray="3 3"/><text class="tx" x="${(X(o.thr)+4).toFixed(1)}" y="${T+9}">≈ ${tf(o.thr)}</text>`;
+  const fit=ols(xs,ys);
+  if (fit) s+=`<line clip-path="url(#cp-${o.id})" x1="${X(x0).toFixed(1)}" y1="${Y(fit.a+fit.b*x0).toFixed(1)}" x2="${X(x1).toFixed(1)}" y2="${Y(fit.a+fit.b*x1).toFixed(1)}" stroke="var(--text)" stroke-width="2" stroke-dasharray="5 4" opacity=".7"/>`;
+  xs.forEach((v,i)=>{ s+=`<circle cx="${X(v).toFixed(1)}" cy="${Y(ys[i]).toFixed(1)}" r="4" fill="var(${o.color})" fill-opacity=".5" stroke="var(${o.color})" stroke-width="1"/>`; });
+  return s+'</svg>';
+}
+function overlaySvg(dates,ys,os,color,yl,ol){
+  const W=360,H=190,L=10,R=10,T=14,B=26;
+  if (!dates.length) return null;
+  const start=parseYmd(dates[0]), span=Math.max(1,daysBetween(dates[0],dates[dates.length-1]));
+  const X=d=>L+(daysBetween(dates[0],d)/span)*(W-L-R);
+  const norm=arr=>{ const v=arr.filter(a=>a!=null); const lo=Math.min(...v), hi=Math.max(...v); return {lo,hi,f:a=>hi===lo?0.5:(a-lo)/(hi-lo)}; };
+  const ny=norm(ys), no=norm(os); const Y=f=>T+(1-f)*(H-T-B);
+  const path=(arr,n)=>{ let d='',pen=false; arr.forEach((v,i)=>{ if (v==null){pen=false;return;} d+=(pen?'L':'M')+X(dates[i]).toFixed(1)+' '+Y(n.f(v)).toFixed(1); pen=true; }); return d; };
+  const dotsOf=(arr,n,c)=>arr.map((v,i)=>v==null?'':`<circle cx="${X(dates[i]).toFixed(1)}" cy="${Y(n.f(v)).toFixed(1)}" r="2" fill="${c}"/>`).join('');
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(yl)} and ${esc(ol)} over time"><line class="ax" x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}"/>`;
+  [0,0.5,1].forEach(f=>{ const d=ymd(addDays(start,Math.round(span*f))); s+=`<text class="tx" x="${L+f*(W-L-R)}" y="${H-8}" text-anchor="${f===0?'start':f===1?'end':'middle'}">${shortDate(d)}</text>`; });
+  s+=`<path d="${path(os,no)}" fill="none" stroke="var(--c-oura)" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round"/>${dotsOf(os,no,'var(--c-oura)')}`;
+  s+=`<path d="${path(ys,ny)}" fill="none" stroke="var(${color})" stroke-width="2.2" stroke-linejoin="round"/>${dotsOf(ys,ny,`var(${color})`)}`;
+  return {svg:s+'</svg>', yr:[ny.lo,ny.hi], or:[no.lo,no.hi]};
+}
+function calendarSvg(mk){
+  const dm=dayMap(UI.slot), today=new Date(), dow=(today.getDay()+6)%7, weeks=12;
+  const start=addDays(today, -(dow+7*(weeks-1))); const cell=22,gap=3,left=16,top=3;
+  let s=`<svg class="cal" viewBox="0 0 ${left+weeks*(cell+gap)} ${top+7*(cell+gap)}" role="img" aria-label="Calendar of daily ${M[mk].label.toLowerCase()}, last 12 weeks">`;
+  ['M','T','W','T','F','S','S'].forEach((l,i)=>s+=`<text class="cal-l" x="0" y="${top+i*(cell+gap)+cell*0.68}">${l}</text>`);
+  for (let w=0;w<weeks;w++) for (let d=0;d<7;d++){
+    const dt=addDays(start,w*7+d); if (dt>today) continue; const ds=ymd(dt); const v=dm[ds]&&dm[ds][mk];
+    const x=left+w*(cell+gap), y=top+d*(cell+gap);
+    s+= v==null ? `<rect class="cal-empty" x="${x}" y="${y}" width="${cell}" height="${cell}" rx="5" data-d="${ds}"/>`
+                : `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" rx="5" fill="var(${M[mk].color})" fill-opacity="${(0.12+0.88*(v-1)/6).toFixed(2)}" data-d="${ds}" data-v="${v.toFixed(1)}"/>`;
+  }
+  return s+'</svg>';
+}
+const barsHtml=(items,mk)=>items.map(([l,v,n])=>`<div class="bar-row"><span>${l}</span><div class="bar"><i style="width:${v==null?0:v/7*100}%;background:var(${M[mk].color})"></i></div><span class="bar-v">${v==null?'–':v.toFixed(1)}<small>${n?'n='+n:''}</small></span></div>`).join('');
+const rhoColor=r=>{ const a=(Math.min(1,Math.abs(r)/0.6)*0.6).toFixed(2); return r>0?`rgba(234,88,12,${a})`:`rgba(37,99,235,${a})`; };
+const cellCls = c => c==='confirmed' ? 'conf' : c==='likely' ? 'likely' : '';
+
+/* =====================================================================
+   Insights
+   ===================================================================== */
+function controlsHtml(){
+  return `<div class="row sp" style="margin:4px 0 0"><div class="seg" role="group" aria-label="Date range">${[[14,'14d'],[30,'30d'],[90,'90d'],[0,'All']].map(([v,l])=>`<button data-act="range" data-v="${v}" aria-pressed="${UI.range===v}">${l}</button>`).join('')}</div></div>
+   <div class="opts"><label>Check-ins to use<select data-sel="slot"><option value="all">All day (average)</option>${SLOTS.map(([v,l])=>`<option value="${v}" ${UI.slot===v?'selected':''}>${l} only</option>`).join('')}</select></label>
+   <label>Oura comparison<select data-sel="dir">${Object.entries(DIR_LAB).map(([v,l])=>`<option value="${v}" ${UI.dir===v?'selected':''}>${l}</option>`).join('')}</select></label></div>
+   <label class="tog"><input type="checkbox" data-sel="base" ${UI.base?'checked':''}> Compare against my recent normal (recommended)</label>
+   <p class="muted small" style="margin:6px 2px 0">${DIR_HELP[UI.dir]} ${UI.base?"Each day is compared with your own average over the 14 days before it, so slow drifts (a season, a busy month) don't create links that aren't really there.":"Raw values: slow drifts over time can create links that aren't real."}</p>`;
+}
+function cardHtml(c){
+  return `<div class="card insight ${c.care?'care':''}"><div class="ih"><span class="k">${esc(c.k)}${c.sub?` · <span class="sub2">${esc(c.sub)}</span>`:''}</span>${c.conf?confPill(c.conf):c.tag?`<span class="pill">${esc(c.tag)}</span>`:''}</div>
+    <p><b>${esc(c.title)}</b></p>${c.body?`<p class="sub">${esc(c.body)}</p>`:''}
+    ${c.details?`<details class="stats"><summary>How sure is this?</summary><p class="small muted">${c.details}</p></details>`:''}
+    ${c.explore?`<div><button class="link" data-act="explore" data-dir="${c.explore.dir}" data-mk="${c.explore.mk}" data-ok="${c.explore.ok}">See the chart</button></div>`:''}</div>`;
+}
+function assocCard(t){
+  const o=ouraMeta(t.ok), m=M[t.mk], th=threshold(t.predRaw,t.outRaw); let body=unitEffect(t);
+  if (th){ const gap=Math.abs(th.hiMean-th.loMean), minGap=t.dir==='next'?0.3*(sd(t.outRaw)||1):0.4; if (gap>=minGap) body+=' '+thrText(t,th); }
+  return {k:`${o.label} ↔ ${m.label}`, sub:DIR_LAB[t.dir], conf:t.conf, title:assocTitle(t), body, details:assocDetails(t), explore:{dir:t.dir, mk:t.mk, ok:t.ok}};
+}
+function tagCard(c){
+  const halves=c.halves[0]!=null&&c.halves[1]!=null?`First half of your data: ${sgn(c.halves[0],1)}; second half: ${sgn(c.halves[1],1)}.`:'Not enough data yet to check both halves.';
+  return {k:`${c.tag} ↔ ${M[c.mk].label}`, conf:c.conf,
+    title:`"${c.tag}" goes with ${sgn(c.b,1)} ${M[c.mk].label.toLowerCase()} points.`,
+    body:`That allows for time of day, weekends and your other tags${Math.abs(c.raw-c.b)>=0.2?`, which explain part of the raw gap (${sgn(c.raw,1)})`:''}. ${c.n1} check-ins with it, ${c.n2} without.${S.settings.tagScope==='day'?' A tag counts for the rest of that day.':''}`,
+    details:esc(`p = ${fp(c.p)}; after correcting for all tag comparisons, q = ${fp(c.q)}. Check-ins on the same day are treated as related, not independent. ${halves}`)};
+}
+function tagSleepCard(c){
+  const o=ouraMeta(c.ok);
+  return {k:`${c.tag} → ${o.label}`, sub:'Today → tonight', conf:c.conf,
+    title:`Days tagged "${c.tag}" are followed by ${sgnN(c.b)}${o.unit} ${o.p} that night.`,
+    body:`Allowing for the night before, weekends and your other tags. ${c.n1} days with it, ${c.n2} without.`,
+    details:esc(`p = ${fp(c.p)}, q = ${fp(c.q)}. ${c.halves[0]!=null&&c.halves[1]!=null?`First half: ${sgnN(c.halves[0])}, second half: ${sgnN(c.halves[1])}.`:''}`)};
+}
+function hrCard(t){
+  return {k:`Heart rate ↔ ${M[t.mk].label}`, conf:t.conf,
+    title:`When your heart rate in the hour before a check-in runs above your usual, your ${M[t.mk].label.toLowerCase()} tends to be ${t.rho>0?'higher':'lower'}.`,
+    body:t.slope!=null?`About ${sgn(t.slope*10,1)} points for every 10 bpm above your usual for that time of day (${t.n} check-ins).`:'',
+    details:esc(`Rank correlation ${sgn(t.rho,2)}, p = ${fp(t.p)}, q = ${fp(t.q)}. Workouts and sleep are excluded.`)};
+}
+function comboCard(c){
+  const oa=ouraMeta(c.a), ob=ouraMeta(c.b), wa=c.ra>0?'lower':'higher', wb=c.rb>0?'lower':'higher';
+  return {k:'Combination', conf:c.conf,
+    title:`On days with both ${wa} ${oa.p} and ${wb} ${ob.p}, your overall score is ${fmt(Math.abs(c.diff))} points ${c.diff<0?'lower':'higher'} than on other days.`,
+    body:`That's a bigger ${c.diff<0?'dip':'change'} than either alone (${sgn(c.dA,1)} and ${sgn(c.dB,1)}). "${wa[0].toUpperCase()+wa.slice(1)}" and "${wb}" mean the worse half of your days. ${c.nb} days had both.`,
+    details:esc(`Welch t-test p = ${fp(c.p)}; q = ${fp(c.q)} across ${c.m} pairs tested.`)};
+}
+function patternCards(A){
+  const cards=[], ents=entriesInView();
+  let best=null;
+  for (const m of METRICS){
+    const by={}; SLOTS.forEach(([s])=>{ const v=ents.filter(e=>e.slot===s&&e.m[m.k]!=null).map(e=>e.m[m.k]); if (v.length>=5) by[s]=v; });
+    const ks=Object.keys(by); if (ks.length<2) continue;
+    const hi=ks.reduce((a,b)=>mean(by[a])>=mean(by[b])?a:b), lo=ks.reduce((a,b)=>mean(by[a])<=mean(by[b])?a:b);
+    const w=welch(by[hi],by[lo]); const spread=mean(by[hi])-mean(by[lo]);
+    if (w && w.p<0.01 && spread>=0.5 && (!best||spread>best.spread)) best={m,hi,lo,spread,mh:mean(by[hi]),ml:mean(by[lo])};
+  }
+  if (best) cards.push({k:'Time of day', tag:'Pattern', title:`${best.m.label} tends to be highest in the ${best.hi} (${fmt(best.mh)}) and lowest in the ${best.lo} (${fmt(best.ml)}).`});
+  stability(A.ctx).forEach(s=>{ if (s.now==null||s.prev==null||cards.length>=3) return;
+    const d=s.now-s.prev; if (Math.abs(d)>=0.4 && (d>0?s.now>=1.3*s.prev:s.now<=0.77*s.prev))
+      cards.push({k:'Stability', tag:'Trend', title:`${LAB(s.k)} has been ${d>0?'less':'more'} steady over the last 2 weeks.`, body:`Average day-to-day swing ${fmt(s.now)} points, vs ${fmt(s.prev)} the 2 weeks before.`}); });
+  let tc=0;
+  for (const m of METRICS){ const t=trendOf(A.ctx.dmAll,m.k); if (t.delta!=null && Math.abs(t.delta)>=0.6 && tc<2){ tc++;
+    cards.push({k:'This week', tag:'Trend', title:`${m.label} is ${t.delta>0?'up':'down'} ${fmt(Math.abs(t.delta))} points vs the week before.`, body:`7-day average ${fmt(t.now)}.`}); } }
+  return cards;
+}
+function buildFindings(A){
+  const hints=[], cats={same:[], tag:[], next:[], hr:[], combo:[], tagSleep:[]}, per={}, perTag={}, perTS={};
+  const byConf=(a,b,ea,eb)=>CONF_RANK(b.conf)-CONF_RANK(a.conf)||eb-ea;
+  A.assoc.filter(t=>(t.dir==='same'||t.dir==='next')&&t.conf).sort((a,b)=>byConf(a,b,Math.abs(a.rho),Math.abs(b.rho))).forEach(t=>{
+    if (t.conf==='hint'){ if (hints.length<6) hints.push(assocCard(t)); return; }
+    const key=t.dir+t.mk; if (per[key]) return; per[key]=1; cats[t.dir].push(assocCard(t));
+  });
+  A.tm.cells.filter(c=>c.conf).sort((a,b)=>byConf(a,b,Math.abs(a.b),Math.abs(b.b))).forEach(c=>{
+    if (c.conf==='hint'){ if (hints.length<6) hints.push(tagCard(c)); return; }
+    if (perTag[c.tag]) return; perTag[c.tag]=1; cats.tag.push(tagCard(c));
+  });
+  A.ts.cells.filter(c=>c.conf).sort((a,b)=>byConf(a,b,Math.abs(a.b/a.sdY),Math.abs(b.b/b.sdY))).forEach(c=>{
+    if (c.conf==='hint'){ if (hints.length<6) hints.push(tagSleepCard(c)); return; }
+    if (perTS[c.tag]) return; perTS[c.tag]=1; cats.tagSleep.push(tagSleepCard(c));
+  });
+  A.cb.forEach(c=>cats.combo.push(comboCard(c)));
+  if (A.hm) A.hm.tests.filter(t=>t.conf).sort((a,b)=>byConf(a,b,Math.abs(a.rho),Math.abs(b.rho))).forEach(t=>{ if (t.conf==='hint'){ if (hints.length<6) hints.push(hrCard(t)); } else cats.hr.push(hrCard(t)); });
+  const caps={same:3, tag:3, next:2, hr:1, combo:1, tagSleep:2}, main=[];
+  for (let round=0; round<3 && main.length<9; round++)
+    for (const c of Object.keys(cats)){ if (round<caps[c] && cats[c][round] && main.length<9) main.push(cats[c][round]); }
+  return {main, extra:patternCards(A), hints};
+}
+function outlookHtml(ol){
+  if (!ol || !ol.ok) return '';
+  const rel=ol.rcv>=0.5?'fairly reliable':ol.rcv>=0.35?'somewhat reliable':'a rough guide';
+  if (ol.noToday) return `<div class="card outlook"><span class="kicker">Today's outlook</span><p class="muted" style="margin:6px 0 0">Sync or import today's Oura data and a forecast for today will appear here. On your past data it has been ${rel}.</p></div>`;
+  const head={harder:'Today might feel harder than usual', better:'Today looks like a good day', typical:'Today looks like a fairly typical day'}[ol.verdict];
+  const tip={harder:'Go easy on yourself and keep plans light where you can.', better:'A good day to take on something you have been putting off.', typical:''}[ol.verdict];
+  const why=ol.reasons&&ol.reasons.length?`Mainly because: ${ol.reasons.map(r=>`${ouraMeta(r.k).label.toLowerCase()} ${r.z>0?'higher':'lower'} than usual`).join(', ')}.`:'';
+  return `<div class="card outlook ${ol.verdict}"><span class="kicker">Today's outlook</span><h2>${head}</h2>${why?`<p class="sub" style="margin:0">${esc(why)}</p>`:''}${tip?`<p class="small" style="margin:6px 0 0">${tip}</p>`:''}
+    <details class="stats"><summary>How sure is this?</summary><p class="small muted">Forecast from last night's Oura data and the day of the week, fitted on your past ${ol.n} days. Checked on days it wasn't fitted to, it lined up with how your days actually went at r = ${ol.rcv.toFixed(2)} (${rel}). It describes your typical pattern, not a certainty.</p></details></div>`;
+}
+function digestHtml(A,F){
+  const t=new Date(), dmA=A.ctx.dmAll, rows=[];
+  for (const k of ['overall',...METRICS.map(m=>m.k)]){
+    const w=[],b=[]; for (let i=0;i<7;i++){ const d=dmA[ymd(addDays(t,-i))]; if (d&&d[k]!=null) w.push(d[k]); } for (let i=7;i<35;i++){ const d=dmA[ymd(addDays(t,-i))]; if (d&&d[k]!=null) b.push(d[k]); }
+    if (w.length>=3 && b.length>=7) rows.push({k, now:mean(w), delta:mean(w)-mean(b)});
+  }
+  const top=F.main.filter(c=>c.conf).slice(0,2), ax=activeExp();
+  if (!rows.length && !top.length) return '';
+  let h=`<div class="section-t">Your week</div><div class="card">`;
+  if (rows.length) h+=`<div class="dg">${rows.map(r=>{ const good=GOOD_UP(r.k)?r.delta>0:r.delta<0, w=Math.abs(r.delta)>=0.3?`<span class="${good?'better':'worse'}">${good?'better':'worse'}</span>`:'<span></span>';
+      return `<span>${LAB(r.k)}</span><span><b>${fmt(r.now)}</b> <span class="muted small">${sgn(r.delta)} vs usual</span></span>${w}`; }).join('')}</div>
+    <p class="small muted" style="margin:6px 0 0">Last 7 days vs the 4 weeks before. Overall combines mood and energy with low anxiety and stress.</p>`;
+  if (top.length) h+=`<h3 style="margin:14px 0 4px">Strongest findings</h3>${top.map(c=>`<p style="margin:4px 0">${confPill(c.conf)} ${esc(c.title)}</p>`).join('')}`;
+  if (!ax && A.sugg.length){ const s=A.sugg[0]; h+=`<h3 style="margin:14px 0 4px">Try this</h3><p style="margin:0">${esc(s.name)} for 2 weeks <span class="muted small">(${esc(s.why)})</span></p><div class="row"><button class="btn" data-act="exp-suggest" data-name="${esc(s.name)}" data-focus="${s.focus}">Set up this experiment</button></div>`; }
+  if (ax) h+=`<p class="small" style="margin:12px 0 0">Experiment running: <b>${esc(ax.name)}</b>${todayStr()>=ax.start?` · day ${daysBetween(ax.start,todayStr())+1} of ${ax.days}`:''}.</p>`;
+  if (A.dq && A.dq.bias && A.dq.bias.miss<A.dq.bias.have) h+=`<p class="small" style="margin:10px 0 0">Heads up: you tend to skip check-ins on rougher days. See Data quality below.</p>`;
+  if (phqDue()) h+=`<p class="small" style="margin:10px 0 0">Your weekly check is due. <a href="#checkin" style="color:var(--accent)">Take it</a> (about 30 seconds).</p>`;
+  return h+'</div>';
+}
+function highlightsHtml(F,A){
+  let h=`<div class="section-t">Highlights</div>`;
+  const cards=F.main.concat(F.extra);
+  if (cards.length) h+=cards.map(cardHtml).join('');
+  else {
+    const paired=A.ctx.oks.length?Math.max(0,...METRICS.map(m=>pairData(A.ctx,'same',m.k,A.ctx.oks[0]).dates.length)):0;
+    h+=`<div class="card"><p><b>Nothing stands out yet.</b></p><p class="muted">${A.ctx.oks.length?`${Math.min(paired,21)} of about 21 days with both check-ins and Oura data in this view.`:'Connect Oura in the Data tab to compare against sleep, HRV and activity.'} Patterns show up once there is enough data to separate signal from noise.</p></div>`;
+  }
+  if (F.hints.length) h+=`<details class="card"><summary>Early hints (${F.hints.length}). These might be flukes.</summary><div class="hint-list" style="margin-top:8px">${F.hints.map(cardHtml).join('')}</div></details>`;
+  h+=`<p class="small muted" style="margin:4px 2px 0"><b>Confirmed</b>: holds up after correcting for the number of comparisons and shows up in both halves of your data. <b>Likely</b>: passes the correction but hasn't repeated yet. <b>Early hint</b>: could easily be chance.</p>`;
+  return h;
+}
+function tilesHtml(ctx){
+  return `<div class="section-t">Your last 30 days</div><div class="grid2">`+METRICS.map(m=>{
+    const t=trendOf(ctx.dmAll,m.k);
+    return `<div class="card tr" style="--mc:var(${m.color});margin:0"><div class="lab"><i></i>${m.label}</div><div class="big">${fmt(t.now)}</div>
+      <div class="delta">${t.delta==null?'7-day avg':`${sgn(t.delta)} vs prior week`}</div>${sparkSvg(t.series,m.color)}</div>`; }).join('')+`</div>`;
+}
+function matrixHtml(A){
+  const {ctx,assoc}=A;
+  let h=`<div class="section-t">What lines up with your Oura data</div>`;
+  if (!ctx.oks.length) return h+`<div class="card"><p class="muted" style="margin:0">Connect or import Oura data in the Data tab to compare it with your check-ins.</p></div>`;
+  const tests=assoc.filter(t=>t.dir===UI.dir);
+  const rows=keysFor(ctx,UI.dir).map(k=>({k, cells:METRICS.map(m=>tests.find(t=>t.mk===m.k&&t.ok===k))}))
+    .map(r=>({...r, score:Math.max(0,...r.cells.filter(c=>c&&c.rho!=null).map(c=>Math.abs(c.rho)))})).sort((a,b)=>b.score-a.score);
+  const shown=UI.showAll?rows:rows.slice(0,12);
+  h+=`<div class="card"><p class="small muted" style="margin:0 0 8px">${DIR_LAB[UI.dir]}. Change it with "Oura comparison" above.</p><div class="tw"><table class="matrix"><thead><tr><th></th>${METRICS.map(m=>`<th style="color:var(${m.color})">${m.label}</th>`).join('')}</tr></thead><tbody>`+
+    shown.map(r=>`<tr><th class="rl" scope="row">${esc(ouraMeta(r.k).label)}</th>${r.cells.map(c=>{
+      if (!c||c.rho==null) return `<td class="na" title="Need at least 10 paired days">${c&&c.n>=1?'·':'–'}</td>`;
+      return `<td class="${cellCls(c.conf)}" tabindex="0" role="button" data-act="explore" data-dir="${c.dir}" data-mk="${c.mk}" data-ok="${c.ok}" style="background:${rhoColor(c.rho)}" aria-label="${esc(ouraMeta(c.ok).label)} and ${M[c.mk].label}: correlation ${sgn(c.rho,2)}, ${c.n} days${c.conf?', '+CONF_LAB[c.conf]:''}">${sgn(c.rho,2)}</td>`; }).join('')}</tr>`).join('')+
+    `</tbody></table></div><div class="legend"><span><i style="background:rgba(234,88,12,.5)"></i>moves together</span><span><i style="background:rgba(37,99,235,.5)"></i>moves opposite</span><span><i style="border:1.5px solid var(--text)"></i>likely</span><span><i style="border:2.5px solid var(--text)"></i>confirmed</span></div>
+    <p class="small muted" style="margin:8px 0 0">Rank correlations (−1 to +1). Tap a cell to see the data behind it. ${rows.length>12?`<button class="link" data-act="toggle-all">${UI.showAll?'Show top 12 only':`Show all ${rows.length}`}</button>`:''}</p></div>`;
+  return h;
+}
+function exploreHtml(A){
+  const {ctx,assoc}=A; if (!ctx.oks.length) return '';
+  const keys=keysFor(ctx,UI.dir); if (!keys.includes(UI.ok)) UI.ok=keys[0];
+  const nx=UI.dir==='next', m=M[UI.mk], o=ouraMeta(UI.ok);
+  let h=`<div class="section-t">Explore a pair</div><div class="card" id="explore"><div class="row" style="margin-top:0">
+    <select data-sel="mk" aria-label="Check-in metric">${METRICS.map(x=>`<option value="${x.k}" ${UI.mk===x.k?'selected':''}>${x.label}</option>`).join('')}</select>
+    <span class="muted">${nx?'→':'vs'}</span>
+    <select data-sel="ok" aria-label="Oura metric" style="max-width:56%">${keys.map(k=>`<option value="${k}" ${UI.ok===k?'selected':''}>${esc(ouraMeta(k).label)}</option>`).join('')}</select></div>
+    <p class="small muted" style="margin:6px 0 0">${DIR_LAB[UI.dir]}</p>`;
+  const t=assoc.find(x=>x.dir===UI.dir&&x.mk===UI.mk&&x.ok===UI.ok) || assocTest(ctx,UI.dir,UI.mk,UI.ok);
+  const P=t.P, n=P.dates.length;
+  if (n<5) return h+`<p class="muted">Only ${n} paired days in this view. Need at least 5 to draw a chart (10+ for the statistics).</p></div>`;
+  const xs=nx?P.ckRaw:P.ouRaw, ys=nx?P.ouRaw:P.ckRaw;
+  const sure=t.conf==='confirmed'||t.conf==='likely', th=sure&&n>=20?threshold(xs,ys):null;
+  const xl=nx?`${m.label} (day average)`:o.label+(o.unit.trim()?` (${o.unit.trim()})`:''), yl=nx?o.label+' that night':m.label;
+  h+=`<div class="charts" style="margin-top:12px">${scatterSvg(xs,ys,{id:'ex', color:m.color, xl, yl, xRating:nx, yRating:!nx, thr:th?th.thr:null})}</div>`;
+  if (t.rho!=null){
+    h+=`<p style="margin:8px 0 0">${confPill(t.conf)} <b>${strength(t.rho)} ${t.rho>0?'positive':'negative'} link</b></p><p class="sub" style="margin:4px 0 0">${esc(unitEffect(t))}</p>`;
+    if (th) h+=`<p class="sub" style="margin:4px 0 0">${esc(thrText(t,th))}</p>`;
+    h+=`<details class="stats"><summary>How sure is this?</summary><p class="small muted">${assocDetails(t)}</p></details>`;
+  } else h+=`<p class="muted" style="margin:6px 0 0">${n} paired days. Statistics start at 10.</p>`;
+  h+=`<p class="small muted" style="margin:6px 0 0">The chart shows your actual values${UI.base?'; the statistics compare each day with your recent normal':''}.</p>`;
+  const dates=[]; for (let d=parseYmd(P.dates[0]); ymd(d)<=P.dates[n-1]; d=addDays(d,1)) dates.push(ymd(d));
+  const C=ctx.ck[UI.mk].raw, O=ctx.ou[UI.ok].raw, off=OFF[UI.dir];
+  const yv=dates.map(d=>C[d]!=null?C[d]:null), ov=dates.map(d=>{ const v=O[off?shift(d,off):d]; return v!=null?v:null; });
+  const g=overlaySvg(dates,yv,ov,m.color,m.label,o.label);
+  if (g) h+=`<div class="charts" style="margin-top:14px">${g.svg}</div><div class="legend"><span><i style="background:var(${m.color})"></i>${m.label} (${fmt(g.yr[0])}–${fmt(g.yr[1])})</span><span><i style="background:var(--c-oura)"></i>${esc(o.label)}${nx?' that night':UI.dir==='prev'?' (day before)':''} (${fmtO(UI.ok,g.or[0])}–${fmtO(UI.ok,g.or[1])})</span></div><p class="small muted" style="margin:6px 0 0">Both lines are scaled to their own range so you can compare shape, not size.</p>`;
+  return h+'</div>';
+}
+function tagsHtml(A){
+  const {tm,ts}=A, scope=S.settings.tagScope==='day'?'the rest of that day':'just that check-in';
+  let h=`<div class="section-t">What you tag</div><div class="card">`;
+  if (!tm.rows.length) h+=`<p class="muted" style="margin:0">Tag your check-ins ("Caffeine", "Exercise", "Work"…) and this shows how each one shifts your numbers, after allowing for time of day, weekends and your other tags. A tag needs at least 5 check-ins with it and 5 without in the selected range.</p>`;
+  else {
+    h+=`<div class="tw"><table class="fx"><thead><tr><th></th>${METRICS.map(m=>`<th style="color:var(${m.color})">${m.label}</th>`).join('')}</tr></thead><tbody>`+
+      tm.rows.slice(0,12).map(r=>`<tr><td class="tg">${esc(r.tag)}<small>${r.n} check-ins</small></td>${METRICS.map(m=>{ const c=r.cells[m.k]; if (!c) return '<td class="muted">–</td>';
+        return `<td class="${cellCls(c.conf)}" style="background:${rhoColor(c.b/2.5*0.6)}" title="Raw difference ${sgn(c.raw,1)}${c.conf?' · '+CONF_LAB[c.conf]:''}">${sgn(c.b,1)}</td>`; }).join('')}</tr>`).join('')+`</tbody></table></div>`;
+    const notes=tm.cells.filter(c=>CONF_RANK(c.conf)>0).sort((a,b)=>Math.abs(b.b)-Math.abs(a.b)).slice(0,5);
+    if (notes.length) h+=`<ul class="notes">${notes.map(c=>`<li>${confPill(c.conf)} <b>${esc(c.tag)}</b> → ${M[c.mk].label.toLowerCase()}: ${sgn(c.b,1)} adjusted, ${sgn(c.raw,1)} raw.${Math.abs(c.raw-c.b)>=0.2?' Part of the raw gap comes from when it happens or what it happens alongside.':''}</li>`).join('')}</ul>`;
+    h+=`<p class="small muted" style="margin:8px 0 0">Adjusted difference in points (1–7 scale) when the tag is present, allowing for time of day, weekends and your other tags. Orange = higher, blue = lower, outlined = likely or confirmed. Tags count for ${scope} (change this in Data → Tags).</p>`;
+  }
+  if (ts.rows.length && ts.cells.length){
+    h+=`<h3 style="margin:18px 0 6px">…and your sleep that night</h3><div class="tw"><table class="fx"><thead><tr><th></th>${ts.keys.map(k=>`<th>${esc(SHORT[k]||ouraMeta(k).label)}</th>`).join('')}</tr></thead><tbody>`+
+      ts.rows.filter(r=>Object.keys(r.cells).length).slice(0,10).map(r=>`<tr><td class="tg">${esc(r.tag)}<small>${r.n} days</small></td>${ts.keys.map(k=>{ const c=r.cells[k]; if (!c) return '<td class="muted">–</td>';
+        return `<td class="${cellCls(c.conf)}" style="background:${rhoColor(c.b/c.sdY*0.6)}" title="Raw difference ${sgnN(c.raw)}">${sgnN(c.b)}</td>`; }).join('')}</tr>`).join('')+
+      `</tbody></table></div><p class="small muted" style="margin:8px 0 0">Difference in that night's Oura numbers on days with the tag, allowing for the night before, weekends and your other tags.</p>`;
+  }
+  return h+'</div>';
+}
+function hrHtml(A){
+  const hm=A.hm; let h=`<div class="section-t">Heart rate before check-ins</div><div class="card">`;
+  if (!hm) return h+`<p class="muted" style="margin:0">Import Oura's heart-rate file (it's in the data export) or sync with a token, and this compares your heart rate in the hour before each check-in with your usual for that time of day.</p></div>`;
+  if (!hm.tests.length) return h+`<p class="muted" style="margin:0">Heart-rate data covers ${hm.n} check-ins in this view. Comparisons start at 15.</p></div>`;
+  const best=[...hm.tests].sort((a,b)=>Math.abs(b.rho)-Math.abs(a.rho))[0];
+  h+=hm.tests.map(t=>`<p style="margin:6px 0">${confPill(t.conf)} <b>${M[t.mk].label}</b>: ${t.slope!=null?`${sgn(t.slope*10,1)} points per 10 bpm above usual`:''} <span class="muted small">(ρ ${sgn(t.rho,2)}, ${t.n} check-ins)</span></p>`).join('');
+  h+=`<div class="charts" style="margin-top:10px">${scatterSvg(best.x,best.y,{id:'hr', color:M[best.mk].color, xl:'Heart rate vs usual, hour before (bpm)', yl:M[best.mk].label, yRating:true})}</div>`;
+  return h+`<p class="small muted" style="margin:6px 0 0">Workouts and sleep are left out. "Usual" is your median heart rate at that time of day on other days.</p></div>`;
+}
+function expCard(x,active){
+  const r=expResult(x), focus=x.focus||'overall', f=r.outs[focus], v=verdictOf(focus,f,r.phase);
+  const label=r.phase==='running'?'Running':r.phase==='upcoming'?'Upcoming':'Finished';
+  let h=`<div class="card"><div class="ih"><span class="kicker">${label}</span>${x.demo?'<span class="pill">demo</span>':''}</div><h3 style="margin-top:4px">${esc(x.name)}</h3>
+    <p class="small muted" style="margin:2px 0 0">${shortDate(x.start)} → ${shortDate(expLast(x))} · watching ${LAB(focus).toLowerCase()}</p>`;
+  if (r.phase==='running') h+=`<div class="prog"><i style="width:${Math.min(100,r.dayNum/x.days*100)}%"></i></div><p class="small muted" style="margin:0">Day ${r.dayNum} of ${x.days} · ${r.expDays} days with check-ins so far</p>`;
+  if (r.phase!=='upcoming'){
+    h+=`<p style="margin:10px 0 2px"><span class="verdict ${v.c}">${v.t}</span>${r.phase==='running'&&f&&f.diff!=null?' <span class="muted small">(so far)</span>':''}</p>`;
+    if (f&&f.diff!=null) h+=`<p class="sub" style="margin:0">${LAB(focus)} averaged ${fmt(f.expMean)} during the experiment vs ${fmt(f.baseMean)} in the 4 weeks before. Allowing for weekends: ${sgn(f.diff,1)} (likely range ${sgn(f.lo,1)} to ${sgn(f.hi,1)}).</p>`;
+    const rows=Object.entries(r.outs).filter(([,o])=>o.diff!=null).map(([k,o])=>`<span>${LAB(k)}</span><span>${sgn(o.diff,1)} <span class="muted small">(${sgn(o.lo,1)} to ${sgn(o.hi,1)})</span></span>`).join('')
+      + Object.entries(r.oura).filter(([,o])=>o.diff!=null).map(([k,o])=>`<span>${esc(ouraMeta(k).label)}</span><span>${sgnN(o.diff)}${esc(ouraMeta(k).unit)} <span class="muted small">(${sgnN(o.lo)} to ${sgnN(o.hi)})</span></span>`).join('');
+    if (rows) h+=`<details class="stats"><summary>All metrics</summary><div class="exp-res">${rows}</div><p class="small muted">Positive means higher during the experiment. Other things also changed over these weeks, and a before/after comparison can't rule that out. Repeating the experiment later makes the result much more convincing.</p></details>`;
+  } else h+=`<p class="small muted" style="margin:8px 0 0">Runs ${x.days} days. Keep checking in as usual.</p>`;
+  h+=`<div class="row">${active?`<button class="btn" data-act="exp-end" data-id="${x.id}">${r.phase==='upcoming'?'Cancel':'End now'}</button>`:''}<button class="link danger" data-act="exp-del" data-id="${x.id}">Delete</button></div></div>`;
+  return h;
+}
+function experimentsHtml(A){
+  const ax=activeExp(); let h=`<div class="section-t">Experiments</div>`;
+  if (ax) h+=expCard(ax,true);
+  else h+=`<div class="card" id="exp-form"><h3>Try an experiment</h3><p class="muted small" style="margin:4px 0 10px">Correlations can't show what causes what. Changing one thing on purpose and comparing with the weeks before gets much closer.</p>
+    ${A.sugg.length?`<p class="small" style="margin:0 0 6px">Ideas from your data:</p><div class="chips">${A.sugg.map(s=>`<button class="chip" data-act="exp-suggest" data-name="${esc(s.name)}" data-focus="${s.focus}" title="${esc(s.why)}">${esc(s.name)}</button>`).join('')}</div>`:''}
+    <div class="field"><label for="exp-name">What will you change?</label><input type="text" id="exp-name" maxlength="60" placeholder="e.g. No caffeine after noon"></div>
+    <div class="row"><label class="small muted">Length <select id="exp-days">${[7,14,21,28].map(d=>`<option value="${d}" ${d===14?'selected':''}>${d} days</option>`).join('')}</select></label>
+      <label class="small muted">Starts <select id="exp-start"><option value="0">Today</option><option value="1">Tomorrow</option></select></label>
+      <label class="small muted">Watch <select id="exp-focus">${['overall',...METRICS.map(m=>m.k)].map(k=>`<option value="${k}">${LAB(k)}</option>`).join('')}</select></label></div>
+    <div class="row"><button class="primary" data-act="exp-start">Start experiment</button></div>
+    <p class="muted small" style="margin:8px 0 0">Keep checking in as usual. Results compare the experiment with your 4 weeks before it, allowing for weekdays vs weekends.</p></div>`;
+  h+=S.experiments.filter(x=>x!==ax).sort((a,b)=>b.start.localeCompare(a.start)).map(x=>expCard(x,false)).join('');
+  return h;
+}
+function phqHtml(ctx){
+  if (!S.phq.length) return '';
+  const L=S.phq.slice(-16), last=L[L.length-1], s=phqScore(last), cal=phqCalib(ctx);
+  const W=360,H=130,LP=26,R=8,T=8,B=22, bw=(W-LP-R)/Math.max(L.length,4), Y=v=>T+(1-v/12)*(H-T-B);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Weekly check scores over time">`;
+  [0,3,6,9,12].forEach(v=>svg+=`<line class="ax" x1="${LP}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="tx" x="${LP-5}" y="${Y(v)+3}" text-anchor="end">${v}</text>`);
+  L.forEach((p,i)=>{ const tt=phqScore(p).total, x=LP+i*bw+bw*0.18; svg+=`<rect x="${x.toFixed(1)}" y="${Y(tt).toFixed(1)}" width="${(bw*0.64).toFixed(1)}" height="${Math.max(1,Y(0)-Y(tt)).toFixed(1)}" rx="3" fill="var(--accent)"><title>${p.date}: ${tt}</title></rect>`; });
+  svg+=`<text class="tx" x="${LP}" y="${H-6}">${shortDate(L[0].date)}</text><text class="tx" x="${W-R}" y="${H-6}" text-anchor="end">${shortDate(last.date)}</text></svg>`;
+  const tw=(r,sg)=>{ const v=r.rho*sg; return v>=0.6?'closely':v>=0.35?'reasonably well':v>=0.15?'loosely':'not clearly'; };
+  let cal1;
+  if (cal.n<6) cal1=`After ${6-cal.n} more weekly check${6-cal.n===1?'':'s'} you'll see how well your daily ratings match these questions.`;
+  else cal1=[cal.anx?`Your daily anxiety ratings track the weekly anxiety questions ${tw(cal.anx,1)} (ρ ${sgn(cal.anx.rho,2)}, ${cal.anx.n} weeks).`:'', cal.dep?`Your daily mood ratings track the weekly mood questions ${tw(cal.dep,-1)} (ρ ${sgn(cal.dep.rho,2)}, ${cal.dep.n} weeks; lower mood should mean a higher score).`:''].filter(Boolean).join(' ')||'Not enough overlapping daily check-ins to compare yet.';
+  return `<div class="section-t">Weekly check (PHQ-4)</div><div class="card"><p style="margin:0">Latest: <b>${s.total} of 12</b> · ${phqBand(s.total)} <span class="muted small">(${shortDate(last.date)}; anxiety ${s.anx}/6, mood ${s.dep}/6)</span></p>
+    <div class="charts" style="margin-top:10px">${svg}</div><p class="small muted" style="margin:4px 0 0">0–2 none to minimal · 3–5 mild · 6–8 moderate · 9–12 severe</p><p class="small" style="margin:8px 0 0">${cal1}</p></div>`;
+}
+function patternsHtml(ctx){
+  const pm=UI.pat, dm=ctx.dm, ents=entriesInView();
+  let h=`<div class="section-t">Patterns</div><div class="card"><div class="chips" role="group" aria-label="Metric">${METRICS.map(m=>`<button class="chip ${pm===m.k?'on':''}" data-act="pat" data-k="${m.k}" aria-pressed="${pm===m.k}">${m.label}</button>`).join('')}</div>`;
+  const slotItems=SLOTS.map(([s,l])=>{ const v=ents.filter(e=>e.slot===s&&e.m[pm]!=null).map(e=>e.m[pm]); return [l, v.length>=3?mean(v):null, v.length]; });
+  const wd=[[],[],[],[],[],[],[]]; Object.keys(dm).filter(inRange).forEach(d=>{ if (dm[d][pm]!=null) wd[(parseYmd(d).getDay()+6)%7].push(dm[d][pm]); });
+  const wdItems=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((l,i)=>[l, wd[i].length>=2?mean(wd[i]):null, wd[i].length]);
+  h+=`<h3 style="margin:16px 0 4px">Time of day</h3>${barsHtml(slotItems,pm)}<h3 style="margin:16px 0 4px">Day of week</h3>${barsHtml(wdItems,pm)}
+    <h3 style="margin:16px 0 6px">Last 12 weeks</h3>${calendarSvg(pm)}<div class="legend"><span>lighter = lower, darker = higher (1 to 7 scale)</span></div>`;
+  const st=stability(ctx);
+  h+=`<h3 style="margin:18px 0 4px">Stability</h3><table class="stab"><thead><tr><th></th><th>Swing, last 2 wks</th><th>2 wks before</th><th>Within a day</th></tr></thead><tbody>${st.map(s=>`<tr><td>${LAB(s.k)}</td><td>${fmt(s.now)}</td><td>${fmt(s.prev)}</td><td>${fmt(s.within)}</td></tr>`).join('')}</tbody></table>
+    <p class="small muted" style="margin:6px 0 0">Swing = average change from one day to the next. Within a day = average gap between your highest and lowest check-in on days with 2 or more (last 30 days). Bigger numbers mean less steady.</p></div>`;
+  return h;
+}
+function qualityHtml(dq){
+  if (!dq) return '';
+  const pct=Math.round(Math.min(1,dq.rate)*100);
+  let h=`<div class="section-t">Data quality</div><div class="card"><p style="margin:0">You checked in on <b>${dq.withC} of ${dq.days}</b> days in this range, ${fmt(dq.total/dq.days)} times a day on average (goal ${dq.goal}). That's ${pct}% of planned check-ins.</p>
+    <p class="small muted" style="margin:6px 0 0">By time of day: ${SLOTS.map(([s,l])=>`${l} ${dq.slotN[s]||0}`).join(' · ')}</p>`;
+  if (dq.bias){ const o=ouraMeta(dq.bias.key), lower=dq.bias.miss<dq.bias.have;
+    h+=`<div class="notice" style="margin:10px 0 0">Days you skipped had ${lower?'lower':'higher'} ${o.p} (${fmtO(dq.bias.key,dq.bias.miss)} vs ${fmtO(dq.bias.key,dq.bias.have)}).${lower?' If you tend to skip rough days, your averages will look better than reality. A quick check-in on hard days helps the most.':''}</div>`; }
+  return h+'</div>';
+}
+function renderInsights(){
+  const root=$('#view-insights');
+  let h=controlsHtml();
+  if (S.demo) h+=`<div class="notice" style="margin-top:12px">Demo data is loaded, so these insights are not real. <button class="link" data-act="remove-demo">Remove demo data</button></div>`;
+  if (S.entries.length<3){
+    h+=`<div class="card" style="margin-top:14px"><h2>Insights appear as you log</h2><p class="muted">Do a few check-ins and patterns will show up here. After about three weeks of check-ins together with Oura data, the "what lines up" views start to say something useful.</p>
+      <div class="row"><a class="btn" href="#checkin">Do a check-in</a><a class="btn" href="#data">Connect Oura</a></div>
+      ${S.entries.length===0&&!Object.keys(S.oura.days).length?'<p class="small muted">Want to see what this looks like first? <button class="link" data-act="load-demo">Load demo data</button> (clearly labelled, removable).</p>':''}</div>`;
+    root.innerHTML=h; return;
+  }
+  const ctx=buildCtx(), assoc=allAssoc(ctx);
+  const A={ctx, assoc, tm:tagModel(ctx), ts:tagSleepModel(ctx), hm:hrModel(), cb:combos(ctx), ol:outlook(ctx), dq:dataQuality(ctx)};
+  A.sugg=suggestions(A);
+  const F=buildFindings(A);
+  careCheck(ctx).forEach(c=>{ h+=`<div style="margin-top:12px"></div>`+cardHtml(c); });
+  h+=`<div style="margin-top:14px"></div>`+outlookHtml(A.ol);
+  h+=digestHtml(A,F)+highlightsHtml(F,A)+tilesHtml(ctx)+matrixHtml(A)+exploreHtml(A)+tagsHtml(A)+hrHtml(A)+experimentsHtml(A)+phqHtml(ctx)+patternsHtml(ctx)+qualityHtml(A.dq);
+  h+=`<p class="small muted" style="margin:18px 2px">These are patterns in your own data, not proof of cause. Experiments are the best way to test one. Not medical advice.</p>`;
+  root.innerHTML=h;
+}
+
+/* =====================================================================
+   History
+   ===================================================================== */
+function renderHistory(){
+  const root=$('#view-history'); const list=[...S.entries].sort((a,b)=>b.ts-a.ts);
+  if (!list.length){ root.innerHTML=`<div class="card" style="margin-top:14px"><h2>No check-ins yet</h2><p class="muted">Your check-ins will be listed here.</p><a class="btn" href="#checkin">Do a check-in</a></div>`; return; }
+  const hrm=hrDeltaMap();
+  const shown=list.slice(0,UI.histLimit); let h='', lastDay='';
+  const yest=ymd(addDays(new Date(),-1)), td=todayStr();
+  for (const e of shown){
+    if (e.date!==lastDay){ lastDay=e.date; h+=`<div class="day-h">${e.date===td?'Today':e.date===yest?'Yesterday':parseYmd(e.date).toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'})}</div>`; }
+    const hd=hrm&&hrm.get(e.id);
+    h+=`<div class="card entry"><div class="top2"><span>${new Date(e.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} · ${e.slot}${e.demo?' · demo':''}</span><span><button class="link" data-act="edit" data-id="${e.id}">Edit</button> · <button class="link danger" data-act="del" data-id="${e.id}">Delete</button></span></div>
+      <div class="vals">${METRICS.filter(m=>e.m[m.k]!=null).map(m=>`<span class="v" style="--mc:var(${m.color})">${m.label} <b>${e.m[m.k]}</b></span>`).join('')}</div>
+      ${e.tags.length?`<div class="tags">${e.tags.map(esc).join(' · ')}</div>`:''}${hd?`<div class="tags">Heart rate in the hour before: ${sgn(hd.delta,0)} bpm vs usual</div>`:''}${e.note?`<p class="note">“${esc(e.note)}”</p>`:''}</div>`;
+  }
+  if (list.length>shown.length) h+=`<div class="row"><button class="btn" data-act="more-hist">Show older (${list.length-shown.length} more)</button></div>`;
+  root.innerHTML=h;
+}
+
+/* =====================================================================
+   Import / sync (Oura)
+   ===================================================================== */
+function mergeDay(day,vals){ if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false; const t=S.oura.days[day]||(S.oura.days[day]={}); let n=0; for (const k in vals){ if (vals[k]!=null && isFinite(vals[k])){ t[k]=vals[k]; n++; } } return n>0; }
+function normalizeApi(col,r){
+  const v={}; const put=(k,x,f=z=>z)=>{ if (x!=null && isFinite(x)) v[k]=f(+x); };
+  switch(col){
+    case 'daily_sleep': put('sleep_score',r.score); break;
+    case 'daily_readiness': put('readiness_score',r.score); put('temp_dev',r.temperature_deviation); break;
+    case 'daily_activity': put('activity_score',r.score); put('steps',r.steps); put('active_cal',r.active_calories); break;
+    case 'sleep':
+      put('total_sleep_h',r.total_sleep_duration,z=>z/3600); put('deep_min',r.deep_sleep_duration,z=>z/60); put('rem_min',r.rem_sleep_duration,z=>z/60);
+      put('sleep_eff',r.efficiency); put('latency_min',r.latency,z=>z/60); put('avg_hrv',r.average_hrv); put('lowest_hr',r.lowest_heart_rate); put('avg_hr',r.average_heart_rate); break;
+    case 'daily_stress': put('stress_high_min',r.stress_high,z=>z/60); put('recovery_high_min',r.recovery_high,z=>z/60); break;
+    case 'daily_spo2': put('spo2', r.spo2_percentage && r.spo2_percentage.average); break;
+  }
+  return v;
+}
+function ingestApi(col, records){
+  let days=0;
+  if (col==='heartrate') return ingestHr(records);
+  if (col==='sleep'){
+    const best={};
+    for (const r of records){ if (!r.day) continue; const score=(r.type==='long_sleep'?1e7:0)+(r.total_sleep_duration||0); if (!best[r.day]||score>best[r.day].s) best[r.day]={s:score,r}; }
+    for (const d in best) if (mergeDay(d, normalizeApi(col,best[d].r))) days++;
+  } else for (const r of records) if (r.day && mergeDay(r.day, normalizeApi(col,r))) days++;
+  return days;
+}
+function guessCollection(r){
+  if (!r||typeof r!=='object') return null;
+  if ('bpm' in r && 'timestamp' in r) return 'heartrate';
+  if ('total_sleep_duration' in r || 'average_hrv' in r) return 'sleep';
+  if ('steps' in r) return 'daily_activity'; if ('temperature_deviation' in r) return 'daily_readiness';
+  if ('stress_high' in r) return 'daily_stress'; if ('spo2_percentage' in r) return 'daily_spo2';
+  const c=r.contributors; if (c){ if ('deep_sleep' in c) return 'daily_sleep'; if ('recovery_index' in c) return 'daily_readiness'; if ('meet_daily_targets' in c) return 'daily_activity'; }
+  return null;
+}
+// Heart rate: stored as 288 five-minute bins per day (0 = no reading). Sleep and workouts are skipped.
+function ingestHr(records){
+  const acc={}, cutoff=ymd(addDays(new Date(),-180));
+  for (const r of records){
+    if (!r || !r.timestamp) continue; const bpm=+r.bpm; if (!(bpm>25&&bpm<230)) continue;
+    const src=String(r.source||'').toLowerCase(); if (src==='sleep'||src==='workout') continue;
+    const dt=new Date(r.timestamp); if (isNaN(dt)) continue; const d=ymd(dt); if (d<cutoff) continue;
+    const b=Math.floor((dt.getHours()*60+dt.getMinutes())/5), a=acc[d]||(acc[d]=new Float64Array(576)); a[b*2]+=bpm; a[b*2+1]++;
+  }
+  S.hr=S.hr||{}; let days=0;
+  for (const d in acc){ const a=acc[d], cur=S.hr[d]||new Array(288).fill(0); let any=false; for (let b=0;b<288;b++) if (a[b*2+1]>0){ cur[b]=Math.round(a[b*2]/a[b*2+1]); any=true; } if (any){ S.hr[d]=cur; days++; } }
+  for (const d in S.hr) if (d<cutoff) delete S.hr[d];
+  return days;
+}
+function importHrCsv(text){
+  text=text.replace(/^﻿/,''); const lines=text.split(/\r?\n/); if (lines.length<2) return 0;
+  const delim=[',',';','\t'].map(d=>[d,lines[0].split(d).length]).sort((a,b)=>b[1]-a[1])[0][0];
+  const clean=s=>String(s||'').trim().replace(/^"|"$/g,'');
+  const head=lines[0].split(delim).map(h=>clean(h).toLowerCase());
+  const ti=head.findIndex(h=>/timestamp|time|date/.test(h)), bi=head.findIndex(h=>/^bpm$|heart_?rate|^hr$/.test(h)), si=head.indexOf('source');
+  if (ti<0||bi<0) return 0;
+  const recs=[]; for (let i=1;i<lines.length;i++){ const c=lines[i].split(delim); if (c.length<=Math.max(ti,bi)) continue; recs.push({timestamp:clean(c[ti]), bpm:+clean(c[bi]), source:si>=0?clean(c[si]):''}); }
+  return ingestHr(recs);
+}
+
+let OURA_MSG={cls:'',text:''}, IMPORT_MSG={cls:'',text:''};
+class OuraErr extends Error { constructor(kind,status){ super(kind); this.kind=kind; this.status=status; } }
+async function ouraGet(path,params,token){
+  let url='https://api.ouraring.com/v2/usercollection/'+path+'?'+new URLSearchParams(params); const out=[]; let guard=0;
+  while (url && guard++<60){
+    const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
+    if (res.status===401||res.status===403) throw new OuraErr('auth',res.status);
+    if (!res.ok) throw new OuraErr('http',res.status);
+    const j=await res.json(); if (Array.isArray(j.data)) out.push(...j.data);
+    url=j.next_token?('https://api.ouraring.com/v2/usercollection/'+path+'?'+new URLSearchParams(Object.assign({},params,{next_token:j.next_token}))):null;
+  }
+  return out;
+}
+async function syncOura(){
+  const btn=$('[data-act=sync-oura]');
+  if (!ouraConnected()){ OURA_MSG={cls:'small msg-err',text:'Connect to Oura first.'}; if (currentTab()==='data') renderData(); return; }
+  const token=await getAccessToken();
+  if (!token){ OURA_MSG={cls:'small msg-err',text:'Your Oura connection expired and could not refresh. Disconnect and connect again.'}; if (currentTab()==='data') renderData(); return; }
+  if (S.demo) removeDemo(true);
+  if (btn) btn.disabled=true; const msg=$('#oura-msg'); if (msg){ msg.className='small muted'; msg.textContent='Syncing…'; }
+  const today=new Date(); const start=S.oura.lastSync?ymd(addDays(new Date(S.oura.lastSync),-5)):ymd(addDays(today,-120));
+  const cols=['daily_sleep','sleep','daily_readiness','daily_activity','daily_stress','daily_spo2'];
+  const notes=[]; let total=0, netFail=0, authFail=0, ok=0, hrOk=false;
+  const fail=(e,c)=>{ if (e instanceof OuraErr && e.kind==='auth') authFail++; else if (e instanceof OuraErr) notes.push(`${c}: HTTP ${e.status}`); else netFail++; };
+  for (const c of cols){
+    try{
+      let recs;
+      try{ recs=await ouraGet(c,{start_date:start,end_date:ymd(addDays(today,1))},token); }
+      catch(e){ if (e instanceof OuraErr && e.kind==='http' && e.status===400) recs=await ouraGet(c,{start_date:start,end_date:ymd(today)},token); else throw e; }
+      total+=ingestApi(c,recs); ok++;
+    }catch(e){ fail(e,c); }
+  }
+  try{
+    const now=Date.now(); let from=S.oura.lastSync ? S.oura.lastSync-2*864e5 : now-30*864e5;
+    while (from<now){ const to=Math.min(from+7*864e5, now); const iso=t=>new Date(t).toISOString().replace(/\.\d{3}Z$/,'Z');
+      const recs=await ouraGet('heartrate',{start_datetime:iso(from), end_datetime:iso(to)},token); ingestHr(recs); from=to; }
+    hrOk=true; ok++;
+  }catch(e){ fail(e,'heartrate'); }
+  if (btn) btn.disabled=false;
+  if (ok>0){ S.oura.lastSync=Date.now(); save(); }
+  let text, cls='small msg-ok';
+  if (ok===0 && netFail>0){ cls='small msg-err'; text="Couldn't reach Oura from the browser. Either the connection failed or Oura's API doesn't allow requests from web pages (a CORS block). Use the file import below instead."; }
+  else if (ok===0 && authFail>0){ cls='small msg-err'; text='Oura rejected the connection. Try Disconnect, then Connect to Oura again. File import below still works.'; }
+  else if (ok===0){ cls='small msg-err'; text='Sync failed. '+notes.join('; '); }
+  else text=`Synced ${total} days of data${hrOk?' plus heart rate':''}.${notes.length?' Skipped: '+notes.join('; ')+'.':''}${authFail?' Some data types were not permitted for this token.':''}`;
+  OURA_MSG={cls,text};
+  toast(ok>0?'Oura synced ✓':'Oura sync failed'); if (currentTab()==='data') renderData();
+}
+
+function parseCsv(text){
+  text=text.replace(/^﻿/,''); const first=text.split(/\r?\n/,1)[0]||'';
+  const delim=[',',';','\t'].map(d=>[d,first.split(d).length]).sort((a,b)=>b[1]-a[1])[0][0];
+  const rows=[]; let row=[],cur='',q=false;
+  for (let i=0;i<text.length;i++){
+    const c=text[i];
+    if (q){ if (c==='"'){ if (text[i+1]==='"'){ cur+='"'; i++; } else q=false; } else cur+=c; }
+    else if (c==='"') q=true;
+    else if (c===delim){ row.push(cur); cur=''; }
+    else if (c==='\n'||c==='\r'){ if (c==='\r'&&text[i+1]==='\n') i++; row.push(cur); cur=''; if (row.length>1||row[0]!=='') rows.push(row); row=[]; }
+    else cur+=c;
+  }
+  if (cur!==''||row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+function parseDay(v){
+  v=String(v||'').trim(); let m;
+  if ((m=v.match(/^(\d{4})-(\d{2})-(\d{2})/))) return `${m[1]}-${m[2]}-${m[3]}`;
+  if ((m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) return `${m[3]}-${pad(+m[1])}-${pad(+m[2])}`;
+  return null;
+}
+const toNum = v => { if (v==null) return null; const s=String(v).trim().replace(/,/g,''); if (s===''||!/^-?\d*\.?\d+(e[-+]?\d+)?$/i.test(s)) return null; return +s; };
+function mapCol(name,file){
+  const n=name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''), f=file.toLowerCase();
+  if (n==='score'||/^(sleep|readiness|activity)_score$/.test(n)){
+    if (n.startsWith('sleep')||(n==='score'&&f.includes('sleep'))) return {k:'sleep_score'};
+    if (n.startsWith('readiness')||(n==='score'&&f.includes('readiness'))) return {k:'readiness_score'};
+    if (n.startsWith('activity')||(n==='score'&&f.includes('activity'))) return {k:'activity_score'};
+    return null;
+  }
+  if (/hrv/.test(n) && !/balance|contributor/.test(n)) return {k:'avg_hrv'};
+  if (/temperature_deviation|temp.*dev/.test(n)) return {k:'temp_dev'};
+  if (/lowest_heart_rate|lowest_hr|resting_heart_rate/.test(n)) return {k:'lowest_hr'};
+  if (/^(average|avg)_(heart_rate|hr)/.test(n)) return {k:'avg_hr'};
+  if (/total_sleep(_duration)?$|^sleep_duration$/.test(n)) return {k:'total_sleep_h', conv:m=>m>1000?1/3600:m>24?1/60:1};
+  if (/^deep_sleep(_duration)?$/.test(n)) return {k:'deep_min', conv:m=>m>300?1/60:1};
+  if (/^rem_sleep(_duration)?$/.test(n)) return {k:'rem_min', conv:m=>m>300?1/60:1};
+  if (/^(sleep_)?latency$/.test(n)) return {k:'latency_min', conv:m=>m>300?1/60:1};
+  if (/^(sleep_)?efficiency$/.test(n)) return {k:'sleep_eff'};
+  if (n==='steps') return {k:'steps'};
+  if (/^active_calories$|^active_cal/.test(n)) return {k:'active_cal'};
+  if (n==='stress_high') return {k:'stress_high_min', conv:m=>m>1440?1/60:1};
+  if (n==='recovery_high') return {k:'recovery_high_min', conv:m=>m>1440?1/60:1};
+  if (/spo2.*(average|avg)|^spo2/.test(n)) return {k:'spo2'};
+  return null;
+}
+function importCsv(fname,text){
+  const rows=parseCsv(text); if (rows.length<2) return {days:0,cols:0};
+  const head=rows[0].map(h=>h.trim());
+  const norm=head.map(h=>h.toLowerCase().replace(/[^a-z0-9]+/g,'_'));
+  let dcol=-1; for (const c of ['day','date','summary_date','calendar_date','timestamp','bedtime_end','bedtime_start']){ dcol=norm.indexOf(c); if (dcol>=0) break; }
+  if (dcol<0) return {days:0,cols:0,skipped:true};
+  const body=rows.slice(1).filter(r=>r.length>1);
+  const base=slug(fname.split('/').pop()); const cols=[]; let customCount=0;
+  head.forEach((h,ci)=>{
+    if (ci===dcol) return;
+    const vals=body.map(r=>toNum(r[ci])); const okv=vals.filter(v=>v!=null);
+    if (okv.length<Math.max(2,body.length*0.5)) return;
+    if (/(^|_)id$|timezone|offset|^index$|^unnamed/.test(norm[ci])) return;
+    const m=maxOf(okv); let map=mapCol(h,fname);
+    if (map){ cols.push({ci,k:map.k,mul:map.conv?map.conv(m):1,vals}); return; }
+    if (customCount>=30) return; customCount++;
+    const k='c_'+base+'_'+norm[ci].replace(/^_|_$/g,''); S.oura.labels[k]=`${h.replace(/_/g,' ')} (${base})`;
+    cols.push({ci,k,mul:1,vals,custom:true});
+  });
+  if (!cols.length) return {days:0,cols:0};
+  const byDay={}; body.forEach((r,ri)=>{ const d=parseDay(r[dcol]); if (d) (byDay[d]||(byDay[d]=[])).push(ri); });
+  const totalCol=cols.find(c=>c.k==='total_sleep_h'); const typeCol=norm.indexOf('type');
+  let days=0;
+  for (const d in byDay){
+    let idxs=byDay[d];
+    if (idxs.length>1 && totalCol){
+      const sc=ri=>(typeCol>=0&&String(body[ri][typeCol]).trim()==='long_sleep'?1e9:0)+(totalCol.vals[ri]||0);
+      idxs=[idxs.reduce((a,b)=>sc(b)>sc(a)?b:a)];
+    }
+    const vals={};
+    for (const c of cols){ const v=idxs.map(ri=>c.vals[ri]).filter(x=>x!=null); if (v.length) vals[c.k]=mean(v)*c.mul; }
+    if (mergeDay(d,vals)) days++;
+  }
+  return {days,cols:cols.length};
+}
+async function readZip(buf){
+  const dv=new DataView(buf), u8=new Uint8Array(buf); let i=u8.length-22;
+  while (i>=0 && dv.getUint32(i,true)!==0x06054b50) i--;
+  if (i<0) throw new Error('Not a valid zip file');
+  const cnt=dv.getUint16(i+10,true); let p=dv.getUint32(i+16,true); const files=[];
+  for (let k=0;k<cnt;k++){
+    if (dv.getUint32(p,true)!==0x02014b50) break;
+    const method=dv.getUint16(p+10,true), csize=dv.getUint32(p+20,true), usize=dv.getUint32(p+24,true), nl=dv.getUint16(p+28,true), el=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true), lho=dv.getUint32(p+42,true);
+    files.push({name:new TextDecoder().decode(u8.subarray(p+46,p+46+nl)), method, csize, usize, lho}); p+=46+nl+el+cl;
+  }
+  return {files, async read(f){
+    const nl=dv.getUint16(f.lho+26,true), el=dv.getUint16(f.lho+28,true), s=f.lho+30+nl+el, data=u8.subarray(s,s+f.csize);
+    if (f.method===0) return data;
+    if (f.method===8){ if (typeof DecompressionStream==='undefined') throw new Error('This browser cannot unzip files. Unzip the export first and pick the CSV files.');
+      return new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer()); }
+    throw new Error('Unsupported zip compression');
+  }};
+}
+function restoreBackup(o){
+  let added=0; const have=new Set(S.entries.map(e=>e.id));
+  for (const e of (o.entries||[])) if (e&&e.id&&!have.has(e.id)&&e.m&&e.date){ e.tags=e.tags||[]; e.note=e.note||''; S.entries.push(e); added++; }
+  S.entries.sort((a,b)=>a.ts-b.ts);
+  const od=(o.oura&&o.oura.days)||{}; for (const d in od) mergeDay(d,od[d]);
+  Object.assign(S.oura.labels,(o.oura&&o.oura.labels)||{});
+  if (o.hr) for (const d in o.hr) if (!S.hr[d] && Array.isArray(o.hr[d])) S.hr[d]=o.hr[d];
+  const ph=new Set(S.phq.map(p=>p.id)); (o.phq||[]).forEach(p=>{ if (p&&p.id&&!ph.has(p.id)&&Array.isArray(p.items)) S.phq.push(p); }); S.phq.sort((a,b)=>a.ts-b.ts);
+  const ex=new Set(S.experiments.map(x=>x.id)); (o.experiments||[]).forEach(x=>{ if (x&&x.id&&!ex.has(x.id)&&x.start) S.experiments.push(x); });
+  if (o.settings){ if (Array.isArray(o.settings.tags)) o.settings.tags.forEach(t=>{ if (!S.settings.tags.includes(t)) S.settings.tags.push(t); }); if (Array.isArray(o.settings.reminders)&&!have.size) S.settings.reminders=o.settings.reminders; }
+  return {restored:added};
+}
+async function importFiles(files){
+  const log=[]; let totalDays=0, backups=0;
+  if (S.demo) removeDemo(true);
+  const handle=async(name,text)=>{
+    const short=name.split('/').pop();
+    if (/\.csv$/i.test(name)){
+      if (/ringconfig/i.test(name)) return;
+      if (/heart.?rate/i.test(name)){ const n=importHrCsv(text); if (n){ totalDays+=n; log.push(`${short}: heart rate for ${n} days`); } return; }
+      const r=importCsv(name,text); if (r.days){ totalDays+=r.days; log.push(`${short}: ${r.days} days, ${r.cols} metrics`); }
+    } else if (/\.json$/i.test(name)){
+      const o=JSON.parse(text);
+      if (o&&o.app==='pulsecheck'){ const r=restoreBackup(o); backups++; log.push(`Backup: ${r.restored} check-ins restored`); return; }
+      const arr=Array.isArray(o)?o:(o&&Array.isArray(o.data)?o.data:null); if (!arr||!arr.length) return;
+      const col=guessCollection(arr[0]); if (!col){ log.push(`${short}: couldn't tell which Oura data this is`); return; }
+      const n=ingestApi(col,arr); totalDays+=n; log.push(`${short}: ${n} days (${col})`);
+    }
+  };
+  for (const f of files){
+    try{
+      if (/\.zip$/i.test(f.name)){
+        const z=await readZip(await f.arrayBuffer());
+        for (const zf of z.files){ if (!/\.(csv|json)$/i.test(zf.name)) continue; if (zf.usize>(/heart.?rate/i.test(zf.name)?160e6:40e6)) continue; await handle(zf.name,new TextDecoder().decode(await z.read(zf))); }
+      } else await handle(f.name, await f.text());
+    }catch(e){ log.push(`${f.name}: ${e.message}`); }
+  }
+  save(); return {log,totalDays,backups};
+}
+
+/* =====================================================================
+   Demo data (made-up; built so each kind of insight has something to find)
+   ===================================================================== */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function loadDemo(){
+  if (S.entries.length || Object.keys(S.oura.days).length){ toast('Demo data only loads into an empty app'); return; }
+  const rnd=mulberry32(42), gauss=()=>{ let u=0,v=0; while(!u) u=rnd(); while(!v) v=rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); };
+  const today=new Date(), DAYS=84; let q=0, alcPrev=0, anxPrev=4, anxEma=4;
+  const expStart=ymd(addDays(today,-49)), expEndD=ymd(addDays(today,-29));
+  S.experiments.push({id:'demo-exp', name:'No caffeine after noon', focus:'anxiety', start:expStart, days:21, created:Date.now(), demo:true});
+  for (let i=DAYS-1;i>=0;i--){
+    const d=addDays(today,-i), ds=ymd(d), dow=d.getDay(), weekend=dow===0||dow===6, inExp=ds>=expStart&&ds<=expEndD;
+    q=0.45*q+gauss()*0.9-0.9*(alcPrev-0.3)-0.5*(anxPrev-anxEma);
+    const day={ sleep_score:Math.round(clamp(78+q*8+gauss()*3,45,98)), total_sleep_h:+clamp(7.1+q*0.55+gauss()*0.5,4.5,9.5).toFixed(2),
+      sleep_eff:Math.round(clamp(88+q*3+gauss()*2,70,99)), deep_min:Math.round(clamp(75+q*12+gauss()*8,25,130)), rem_min:Math.round(clamp(95+q*10+gauss()*10,40,150)),
+      latency_min:Math.round(clamp(14-q*4+gauss()*4,2,50)), avg_hrv:Math.round(clamp(48+q*5+gauss()*6,18,90)), lowest_hr:Math.round(clamp(56-q*2.2+gauss()*1.2,45,72)),
+      avg_hr:Math.round(clamp(61-q*2+gauss()*1.3,48,76)), readiness_score:Math.round(clamp(76+q*7+gauss()*4,40,98)), temp_dev:+(gauss()*0.25).toFixed(2),
+      steps:Math.round(clamp(7600+gauss()*2400+(weekend?1500:0),1500,18000)) };
+    day.activity_score=Math.round(clamp(60+(day.steps-7600)/220+gauss()*5,30,98)); day.active_cal=Math.round(clamp(day.steps*0.045+gauss()*40,60,900));
+    day.stress_high_min=Math.round(clamp(110-q*20+gauss()*25,0,400)); day.recovery_high_min=Math.round(clamp(80+q*20+gauss()*25,0,300));
+    S.oura.days[ds]=day; S.demoDays.push(ds);
+    const skip=rnd()<(q<-0.8?0.35:0.04);
+    const n=rnd()<0.15?1:rnd()<0.6?2:3, slots=n===1?['evening']:n===2?['morning','evening']:['morning','afternoon','evening'];
+    let alc=0; const work=!weekend&&rnd()<0.8, exer=rnd()<0.35, soc=rnd()<(weekend?0.55:0.25), out=rnd()<0.35, short=day.total_sleep_h<6.5, combo=day.avg_hrv<45&&day.total_sleep_h<7;
+    const hrBins=new Array(288).fill(0);
+    for (let b=84;b<276;b++){ const hr=b*5/60; hrBins[b]=Math.round(66+6*Math.sin((hr-9)/14*Math.PI)+(hr>12&&hr<14?3:0)-q*1.5+gauss()*3); }
+    const anxs=[];
+    slots.forEach(sl=>{
+      const hh=sl==='morning'?8+rnd()*2:sl==='afternoon'?13+rnd()*2.5:19+rnd()*2.5;
+      const ts=new Date(d.getFullYear(),d.getMonth(),d.getDate(),Math.floor(hh),Math.floor((hh%1)*60)).getTime();
+      const caf=sl==='morning'?rnd()<0.6:(!inExp&&rnd()<0.6), al=sl==='evening'&&rnd()<(weekend?0.5:0.2); if (al) alc=1;
+      const anx=3.3+(combo?0.5:0)-0.55*q+(caf?(sl==='morning'?0.3:1.4):0)+0.5*(work?1:0)+0.35*(sl==='afternoon'?1:0)-0.3*(exer?1:0)+gauss()*0.7;
+      const str=3.2+0.9*(work?1:0)-0.5*(exer?1:0)-0.3*q-0.25*(soc?1:0)+gauss()*0.7;
+      const mood=4.8+0.35*q+0.4*(exer?1:0)+0.35*(soc?1:0)+0.25*(out?1:0)-0.25*(anx-3.3)-(short?0.8:0)-(combo?0.9:0)+gauss()*0.6;
+      const en=4.3-(combo?0.7:0)+0.7*q+0.3*(exer?1:0)-0.3*(al?1:0)+(sl==='evening'?-0.6:0)+gauss()*0.6;
+      anxs.push(anx);
+      if (skip || ts>Date.now()) return;
+      const bEnd=Math.floor(hh*60/5); for (let b=bEnd-12;b<=bEnd;b++) if (b>=0&&hrBins[b]) hrBins[b]+=Math.round((anx-3.3)*3.5);
+      const tags=[]; if (caf) tags.push('Caffeine'); if (al) tags.push('Alcohol'); if (exer) tags.push('Exercise'); if (soc) tags.push('Social'); if (work) tags.push('Work'); if (out) tags.push('Outside'); if (q<-1) tags.push('Poor sleep');
+      S.entries.push({id:'demo'+uid(), ts, date:ds, slot:sl, demo:true, m:{mood:clamp(Math.round(mood),1,7), anxiety:clamp(Math.round(anx),1,7), stress:clamp(Math.round(str),1,7), energy:clamp(Math.round(en),1,7)}, tags, note:''});
+    });
+    if (i>0) S.hr[ds]=hrBins; else { const nowB=Math.floor((today.getHours()*60+today.getMinutes())/5); S.hr[ds]=hrBins.map((v,b)=>b<=nowB?v:0); }
+    alcPrev=alc; anxPrev=anxs.length?mean(anxs):anxEma; anxEma=0.85*anxEma+0.15*anxPrev;
+  }
+  S.entries.sort((a,b)=>a.ts-b.ts);
+  for (let i=DAYS-8;i>=0;i-=7){
+    const d=addDays(today,-i), ds=ymd(d), from=ymd(addDays(d,-14));
+    const win=S.entries.filter(e=>e.date<=ds&&e.date>from); if (win.length<5) continue;
+    const anx=mean(win.map(e=>e.m.anxiety)), mood=mean(win.map(e=>e.m.mood));
+    const g=clamp(Math.round((anx-3.0)*1.6+gauss()*0.5),0,6), dp=clamp(Math.round((5.3-mood)*1.6+gauss()*0.5),0,6);
+    const split=v=>{ const a=Math.min(3,Math.ceil(v/2)); return [a, Math.min(3,v-a)]; };
+    const ts=new Date(d.getFullYear(),d.getMonth(),d.getDate(),20,30).getTime(); if (ts>Date.now()) continue;
+    S.phq.push({id:'demo-phq'+i, ts, date:ds, items:[...split(g),...split(dp)], demo:true});
+  }
+  S.demo=true; save();
+}
+function removeDemo(silent){
+  S.entries=S.entries.filter(e=>!e.demo); S.demoDays.forEach(d=>{ delete S.oura.days[d]; delete S.hr[d]; }); S.demoDays=[];
+  S.phq=S.phq.filter(p=>!p.demo); S.experiments=S.experiments.filter(x=>!x.demo); S.demo=false; save();
+  if (!silent) toast('Demo data removed');
+}
+
+/* =====================================================================
+   Data tab
+   ===================================================================== */
+function renderData(){
+  const root=$('#view-data'); const days=Object.keys(S.oura.days).sort(); const keys=ouraKeys(), hrDays=Object.keys(S.hr||{}).length;
+  const last=S.oura.lastSync?new Date(S.oura.lastSync).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'never';
+  const rem=S.settings.reminders;
+  root.innerHTML=`
+  <div class="section-t">Oura Ring</div>
+  <div class="card">
+    ${days.length?`<dl class="kv"><dt>Days loaded</dt><dd>${days.length} (${days[0]} → ${days[days.length-1]})</dd><dt>Metrics</dt><dd>${keys.length}</dd><dt>Heart rate</dt><dd>${hrDays?hrDays+' days':'none yet'}</dd><dt>Last sync</dt><dd>${last}</dd></dl>`:'<p class="muted" style="margin:0">No Oura data yet.</p>'}
+    <h3 style="margin-top:14px">Import a file</h3>
+    <p class="muted small" style="margin:4px 0 8px">Your Oura data export (.zip), or individual .csv / .json files. Known columns (sleep, HRV, readiness, activity…) are matched automatically, and every other numeric column becomes a metric you can compare. The heart-rate file powers "heart rate before check-ins".</p>
+    <label class="btn" style="cursor:pointer">Choose files<input type="file" id="oura-file" multiple accept=".zip,.csv,.json,application/zip,text/csv,application/json" hidden></label>
+    <p id="import-msg" class="${IMPORT_MSG.cls||'small'}" role="status">${esc(IMPORT_MSG.text)}</p>
+    <details ${ouraConnected()||OURA_MSG.text?'open':''}><summary>Auto-sync (sign in with Oura)</summary>
+      ${ouraConnected()?`
+      <p class="muted small">Connected to Oura. Access is a short-lived token this browser refreshes itself; nothing but these requests ever leaves this device.</p>
+      <div class="row"><button class="primary" data-act="sync-oura">Sync now</button><button class="link danger" data-act="disconnect-oura">Disconnect</button></div>`:`
+      <p class="muted small">Oura retired personal access tokens, so this signs in the same way the Oura app does: a one-time Client ID and Worker URL from your own setup (see SETUP.md), then a normal Oura login. Details on this device only.</p>
+      <div class="field"><input type="text" id="oura-client-id" placeholder="Oura app Client ID" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(loadOauth().client_id||'')}"></div>
+      <div class="field"><input type="text" id="oura-worker-url" placeholder="Worker URL (https://…workers.dev)" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(loadOauth().worker_url||'')}"></div>
+      <div class="row"><button class="primary" data-act="connect-oura">Connect to Oura</button></div>`}
+      <p id="oura-msg" class="${OURA_MSG.cls||'small'}" role="status">${esc(OURA_MSG.text)}</p></details>
+  </div>
+
+  <div class="section-t">Reminders</div>
+  <div class="card">
+    <p class="muted small" style="margin:0 0 8px">Check-ins per day (1 to 3). A web app can't ring your phone when it's closed, so download a calendar file and add it to your phone's calendar for real notifications.</p>
+    ${rem.map((t,i)=>`<div class="trow"><input type="time" value="${esc(t)}" data-rem="${i}" aria-label="Reminder ${i+1}"> ${rem.length>1?`<button class="link danger" data-act="rem-del" data-i="${i}">Remove</button>`:''}</div>`).join('')}
+    <div class="row">${rem.length<3?'<button class="btn" data-act="rem-add">Add a time</button>':''}<button class="primary" data-act="ics">Download calendar reminders (.ics)</button></div>
+  </div>
+
+  <div class="section-t">Tags</div>
+  <div class="card"><div class="chips">${S.settings.tags.map(t=>`<button class="chip" data-act="tag-del" data-t="${esc(t)}" aria-label="Remove tag ${esc(t)}">${esc(t)}<span class="x">×</span></button>`).join('')}</div>
+    <div class="row"><input type="text" id="new-tag" maxlength="24" placeholder="New tag" style="max-width:200px"><button class="btn" data-act="tag-add">Add</button></div>
+    <p class="muted small" style="margin:8px 0 0">Removing a tag keeps it on past check-ins.</p>
+    <p class="small" style="margin:14px 0 6px">In the analysis, a tag counts for:</p>
+    <div class="seg" role="group" aria-label="Tag scope"><button data-act="tag-scope" data-v="checkin" aria-pressed="${S.settings.tagScope!=='day'}">Just that check-in</button><button data-act="tag-scope" data-v="day" aria-pressed="${S.settings.tagScope==='day'}">Rest of that day</button></div>
+    <p class="muted small" style="margin:6px 0 0">"Rest of that day" lets morning caffeine show up in your afternoon and evening check-ins.</p></div>
+
+  <div class="section-t">Weekly check (PHQ-4)</div>
+  <div class="card"><p class="muted small" style="margin:0 0 8px">Four standard questions once a week, about 30 seconds. ${S.phq.length} taken so far. It's ${S.settings.phq4?'on':'off'}.</p>
+    <div class="row" style="margin-top:0"><button class="btn" data-act="phq-toggle">${S.settings.phq4?'Turn off':'Turn on'}</button><button class="btn" data-act="phq-now">Take it now</button></div></div>
+
+  <div class="section-t">Backup & export</div>
+  <div class="card">
+    <p class="muted small" style="margin:0 0 8px">Your data lives only in this browser. Back it up now and then (${S.settings.lastBackup?'last backup '+new Date(S.settings.lastBackup).toLocaleDateString():'no backup yet'}).</p>
+    <div class="row" style="margin-top:0"><button class="primary" data-act="export-json">Backup (.json)</button><button class="btn" data-act="export-daily">Daily table (.csv)</button><button class="btn" data-act="export-checkins">Check-ins (.csv)</button></div>
+    <p class="muted small" style="margin:10px 0 4px">Restore from a backup (adds anything missing, keeps what you have):</p>
+    <label class="btn" style="cursor:pointer">Choose backup file<input type="file" id="restore-file" accept=".json,application/json" hidden></label>
+    <p class="muted small" style="margin:10px 0 0">The daily table has one row per day with check-in averages, the overall score, weekly check scores, experiment periods and every Oura metric, ready for Power BI, Excel or SQL.</p>
+  </div>
+
+  <div class="section-t">Demo & reset</div>
+  <div class="card">
+    ${S.demo?`<p style="margin:0 0 8px">Demo data is loaded (12 weeks of made-up check-ins, Oura data, heart rate, weekly checks and one finished experiment).</p><button class="btn" data-act="remove-demo">Remove demo data</button>`
+      :`<p class="muted small" style="margin:0 0 8px">Want to see the insights before you have data? Load clearly labelled fake data, then remove it with one tap.</p><button class="btn" data-act="load-demo" ${(S.entries.length||days.length)?'disabled':''}>Load demo data</button>${(S.entries.length||days.length)?'<span class="muted small"> (only available when the app is empty)</span>':''}`}
+    <div class="row" style="margin-top:16px"><button class="link danger" data-act="wipe">Delete all data on this device</button></div>
+  </div>
+
+  <div class="section-t">About</div>
+  <div class="card"><p class="small" style="margin:0">Pulse Check keeps everything on this device. Nothing is uploaded anywhere except requests you trigger to Oura. It's a personal tracking tool, not medical advice or a diagnosis. The weekly check uses the PHQ-4 (Kroenke, Spitzer, Williams & Löwe, 2009), which is free to use. If you are in distress or thinking about harming yourself, call or text 988 (US) or your local emergency number.</p></div>`;
+}
+
+function download(name,text,type){
+  const url=URL.createObjectURL(new Blob([text],{type})); const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+const csvCell = v => { v=v==null?'':String(v); return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+const csvRow = a => a.map(csvCell).join(',');
+function exportCheckins(){
+  const hrm=hrDeltaMap();
+  const lines=[csvRow(['date','time','slot','mood','anxiety','stress','energy','tags','note','hr_vs_usual_bpm'])];
+  [...S.entries].sort((a,b)=>a.ts-b.ts).forEach(e=>{ const hd=hrm&&hrm.get(e.id); lines.push(csvRow([e.date, new Date(e.ts).toTimeString().slice(0,5), e.slot, ...METRICS.map(m=>e.m[m.k]), e.tags.join('; '), e.note, hd?hd.delta.toFixed(1):''])); });
+  download('pulsecheck-checkins.csv', lines.join('\n'), 'text/csv');
+}
+function exportDaily(){
+  const dm=addOverall(dayMap('all')), cnt={}; S.entries.forEach(e=>cnt[e.date]=(cnt[e.date]||0)+1);
+  const phq={}; S.phq.forEach(p=>phq[p.date]=phqScore(p).total);
+  const expOn=d=>{ const x=S.experiments.find(x=>d>=x.start&&d<=expLast(x)); return x?x.name:''; };
+  const keys=ouraKeys(); const dates=[...new Set([...Object.keys(dm),...Object.keys(S.oura.days)])].sort();
+  const lines=[csvRow(['date','checkins',...METRICS.map(m=>m.k),'overall','phq4_total','experiment',...keys])];
+  dates.forEach(d=>lines.push(csvRow([d, cnt[d]||0, ...METRICS.map(m=>dm[d]&&dm[d][m.k]!=null?dm[d][m.k].toFixed(2):''), dm[d]&&dm[d].overall!=null?dm[d].overall.toFixed(2):'', phq[d]!=null?phq[d]:'', expOn(d), ...keys.map(k=>S.oura.days[d]&&S.oura.days[d][k]!=null?S.oura.days[d][k]:'')])));
+  download('pulsecheck-daily.csv', lines.join('\n'), 'text/csv');
+}
+function exportJson(){
+  download('pulsecheck-backup-'+todayStr()+'.json', JSON.stringify({app:'pulsecheck', version:2, exportedAt:new Date().toISOString(), entries:S.entries, oura:{days:S.oura.days, labels:S.oura.labels}, hr:S.hr, phq:S.phq, experiments:S.experiments, settings:S.settings}), 'application/json');
+  S.settings.lastBackup=Date.now(); save(); toast('Backup downloaded'); renderData();
+}
+function makeIcs(){
+  const fold=l=>{ let o=''; while (l.length>74){ o+=l.slice(0,74)+'\r\n '; l=l.slice(74); } return o+l; };
+  const url=/^https?:/.test(location.href)?location.href.split('#')[0]:'';
+  const now=new Date(), stamp=now.toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+  const out=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//PulseCheck//EN','CALSCALE:GREGORIAN'];
+  S.settings.reminders.forEach((t,i)=>{
+    const [hh,mm]=t.split(':').map(Number); const start=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hh,mm);
+    if (start<now) start.setDate(start.getDate()+1);
+    out.push('BEGIN:VEVENT',`UID:pulsecheck-${i}-${t.replace(':','')}@pulsecheck.local`,'DTSTAMP:'+stamp,
+      `DTSTART:${ymd(start).replace(/-/g,'')}T${pad(hh)}${pad(mm)}00`,'DURATION:PT10M','RRULE:FREQ=DAILY','SUMMARY:Pulse Check-in',
+      fold('DESCRIPTION:20-second check-in.'+(url?' Open: '+url:'')), ...(url?[fold('URL:'+url)]:[]),
+      'BEGIN:VALARM','TRIGGER:PT0M','ACTION:DISPLAY','DESCRIPTION:Pulse Check-in','END:VALARM','END:VEVENT');
+  });
+  out.push('END:VCALENDAR'); return out.join('\r\n');
+}
+
+/* =====================================================================
+   Routing + events
+   ===================================================================== */
+const TABS=['checkin','insights','history','data'];
+const currentTab=()=>{ const h=(location.hash||'#checkin').slice(1); return TABS.includes(h)?h:'checkin'; };
+function show(keepScroll){
+  const t=currentTab();
+  TABS.forEach(x=>{ $('#view-'+x).hidden=x!==t; });
+  $$('.tabs a').forEach(a=>a.setAttribute('aria-current',a.dataset.tab===t?'page':'false'));
+  ({checkin:()=>{ renderHero(); renderPhq(); syncForm(); }, insights:renderInsights, history:renderHistory, data:renderData})[t]();
+  if (!keepScroll) window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',()=>show(false));
+document.addEventListener('visibilitychange',()=>{ if (!document.hidden && currentTab()==='checkin'){ renderHero(); renderPhq(); } });
+
+function fillExperiment(name,focus){
+  const go=()=>{ const n=$('#exp-name'), f=$('#exp-focus'), box=$('#exp-form'); if (!n) return; n.value=name; if (f&&focus) f.value=focus; box.scrollIntoView({behavior:'smooth',block:'start'}); n.focus({preventScroll:true}); };
+  if (currentTab()!=='insights'){ location.hash='#insights'; setTimeout(go,50); } else go();
+}
+
+document.addEventListener('click',async ev=>{
+  const b=ev.target.closest('[data-act]');
+  if (!b){ const r=ev.target.closest('svg.cal rect[data-d]'); if (r){ const d=parseYmd(r.dataset.d); toast(d.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'})+(r.dataset.v?` · ${M[UI.pat].label} ${r.dataset.v}`:' · no check-ins')); } return; }
+  const a=b.dataset.act;
+  switch(a){
+    case 'pick': { const k=b.dataset.k, v=+b.dataset.v; if (FORM.m[k]===v) delete FORM.m[k]; else FORM.m[k]=v; syncForm(); break; }
+    case 'clear-metric': delete FORM.m[b.dataset.k]; syncForm(); break;
+    case 'tag': { const t=b.dataset.t; FORM.tags.has(t)?FORM.tags.delete(t):FORM.tags.add(t); syncForm(); break; }
+    case 'change-when': { const wi=$('#when-input'); wi.hidden=!wi.hidden; wi.max=toLocalInput(Date.now()); wi.value=toLocalInput(FORM.ts||Date.now()); if (!wi.hidden) wi.focus(); break; }
+    case 'cancel-edit': resetForm(); break;
+    case 'edit': { const e=S.entries.find(x=>x.id===b.dataset.id); if (!e) break; FORM={m:Object.assign({},e.m), tags:new Set(e.tags), note:e.note||'', ts:e.ts, editId:e.id}; if (location.hash==='#checkin') show(false); else location.hash='#checkin'; break; }
+    case 'del': if (confirm('Delete this check-in?')){ S.entries=S.entries.filter(x=>x.id!==b.dataset.id); save(); renderHistory(); toast('Deleted'); } break;
+    case 'more-hist': UI.histLimit+=60; renderHistory(); break;
+    case 'range': UI.range=+b.dataset.v; renderInsights(); break;
+    case 'toggle-all': UI.showAll=!UI.showAll; renderInsights(); break;
+    case 'pat': UI.pat=b.dataset.k; renderInsights(); break;
+    case 'explore': if (b.dataset.dir) UI.dir=b.dataset.dir; UI.mk=b.dataset.mk; UI.ok=b.dataset.ok; renderInsights(); { const x=$('#explore'); if (x) x.scrollIntoView({behavior:'smooth',block:'start'}); } break;
+    case 'load-demo': loadDemo(); show(true); break;
+    case 'remove-demo': removeDemo(); show(true); break;
+    case 'connect-oura': await connectOura($('#oura-client-id').value, $('#oura-worker-url').value); break;
+    case 'disconnect-oura': disconnectOura(); renderData(); break;
+    case 'sync-oura': await syncOura(); break;
+    case 'rem-add': if (S.settings.reminders.length<3){ S.settings.reminders.push('14:00'); S.settings.reminders.sort(); save(); renderData(); } break;
+    case 'rem-del': S.settings.reminders.splice(+b.dataset.i,1); save(); renderData(); break;
+    case 'ics': download('pulsecheck-reminders.ics', makeIcs(), 'text/calendar'); toast('Open the file to add the reminders to your calendar'); break;
+    case 'tag-add': { const i=$('#new-tag'), t=i.value.trim(); if (t && !S.settings.tags.includes(t)){ S.settings.tags.push(t); save(); renderTagChips(); renderData(); } break; }
+    case 'tag-del': S.settings.tags=S.settings.tags.filter(t=>t!==b.dataset.t); save(); renderTagChips(); FORM.tags.delete(b.dataset.t); renderData(); break;
+    case 'tag-scope': S.settings.tagScope=b.dataset.v==='day'?'day':'checkin'; save(); renderData(); break;
+    case 'export-json': exportJson(); break;
+    case 'export-daily': exportDaily(); break;
+    case 'export-checkins': exportCheckins(); break;
+    case 'phq-open': PHQF.open=true; renderPhq(); break;
+    case 'phq-cancel': PHQF={open:false, items:[null,null,null,null], result:null}; renderPhq(); break;
+    case 'phq-pick': PHQF.items[+b.dataset.i]=+b.dataset.v; renderPhq(); break;
+    case 'phq-save': { if (PHQF.items.some(v=>v==null)) break; const p={id:uid(), ts:Date.now(), date:todayStr(), items:PHQF.items.slice()}; S.phq.push(p); save(); PHQF={open:false, items:[null,null,null,null], result:p}; renderPhq(); break; }
+    case 'phq-done': PHQF.result=null; renderPhq(); break;
+    case 'phq-snooze': S.settings.phqSnooze=Date.now()+20*3600e3; save(); renderPhq(); break;
+    case 'phq-off': S.settings.phq4=false; save(); renderPhq(); toast('Weekly check turned off. Turn it back on in the Data tab.'); break;
+    case 'phq-toggle': S.settings.phq4=!S.settings.phq4; S.settings.phqSnooze=0; save(); renderData(); break;
+    case 'phq-now': PHQF={open:true, items:[null,null,null,null], result:null}; location.hash='#checkin'; break;
+    case 'exp-suggest': if (activeExp()){ toast('Finish or end the current experiment first'); break; } fillExperiment(b.dataset.name, b.dataset.focus); break;
+    case 'exp-start': {
+      if (activeExp()){ toast('An experiment is already running'); break; }
+      const name=($('#exp-name').value||'').trim(); if (!name){ toast('Give the experiment a name first'); $('#exp-name').focus(); break; }
+      const start=+$('#exp-start').value?ymd(addDays(new Date(),1)):todayStr();
+      S.experiments.push({id:uid(), name, focus:$('#exp-focus').value, start, days:+$('#exp-days').value, created:Date.now()}); save(); renderInsights(); toast('Experiment started. Keep checking in as usual.'); break; }
+    case 'exp-end': { const x=S.experiments.find(x=>x.id===b.dataset.id); if (!x) break;
+      if (todayStr()<x.start){ S.experiments=S.experiments.filter(y=>y!==x); } else { x.ended=todayStr(); } save(); renderInsights(); break; }
+    case 'exp-del': if (confirm('Delete this experiment? Your check-ins are kept.')){ S.experiments=S.experiments.filter(x=>x.id!==b.dataset.id); save(); renderInsights(); } break;
+    case 'wipe': if (confirm('Delete ALL check-ins and Oura data on this device? This cannot be undone.') && confirm('Really delete everything? Consider a backup first.')){ S=defaults(); save(); disconnectOura(); resetForm(); renderTagChips(); show(true); toast('All data deleted'); } break;
+  }
+});
+document.addEventListener('keydown',ev=>{ if ((ev.key==='Enter'||ev.key===' ') && ev.target.matches('td[data-act=explore]')){ ev.preventDefault(); ev.target.click(); } });
+document.addEventListener('input',ev=>{ if (ev.target.id==='note') FORM.note=ev.target.value; });
+document.addEventListener('change',async ev=>{
+  const t=ev.target;
+  if (t.dataset.sel){ const k=t.dataset.sel; if (k==='base') UI.base=t.checked; else UI[k]=t.value; renderInsights(); return; }
+  if (t.id==='when-input'){ const ts=t.value?new Date(t.value).getTime():null; FORM.ts=ts&&!isNaN(ts)?ts:null; syncForm(); return; }
+  if (t.dataset.rem!==undefined){ if (/^\d{2}:\d{2}$/.test(t.value)){ S.settings.reminders[+t.dataset.rem]=t.value; save(); } return; }
+  if (t.id==='oura-file'){ const msg=$('#import-msg'); msg.className='small muted'; msg.textContent='Importing…';
+    const r=await importFiles(Array.from(t.files)); t.value='';
+    const good=r.totalDays||r.backups;
+    IMPORT_MSG={cls:'small '+(good?'msg-ok':'msg-err'), text:r.log.length?r.log.join(' · '):'No Oura data found in those files.'};
+    if (good) toast('Import finished ✓'); renderData(); return; }
+  if (t.id==='restore-file'){ const r=await importFiles(Array.from(t.files)); t.value=''; toast(r.log.join(' · ')||'Nothing to restore'); renderData(); }
+});
+$('#checkin-form').addEventListener('submit',submitCheckin);
+
+/* test hooks (read-only helpers) */
+window.__pulsecheck = {state:()=>S, importCsv, importFiles, readZip, spearman, welch, regress, bh, ridgeFit, ingestApi, ingestHr, syncOura, makeIcs, loadDemo, show, UI, buildCtx, allAssoc, tagModel, tagSleepModel, hrModel, combos, outlook, dataQuality, expResult, threshold, phqCalib, loadOauth, saveOauth, connectOura, handleOuraCallback, getAccessToken, disconnectOura};
+
+buildForm(); show(true);
+handleOuraCallback().then(handled=>{ if (handled){ location.hash='#data'; show(true); } });
+if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
