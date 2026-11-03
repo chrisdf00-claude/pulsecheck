@@ -1493,14 +1493,22 @@ function importHrCsv(text){
 
 let OURA_MSG={cls:'',text:''}, IMPORT_MSG={cls:'',text:''};
 class OuraErr extends Error { constructor(kind,status){ super(kind); this.kind=kind; this.status=status; } }
+function ouraApiBase(){
+  // Oura's data API doesn't send CORS headers, so a browser page can't read its responses
+  // directly (confirmed: "CORS header 'Access-Control-Allow-Origin' missing"). The Worker's
+  // /api/* route relays these GET requests and adds that header; it reads nothing and stores
+  // nothing, it just forwards the request and the response.
+  const w=(loadOauth().worker_url||'').replace(/\/+$/,'');
+  return w+'/api/v2/usercollection/';
+}
 async function ouraGet(path,params,token){
-  let url='https://api.ouraring.com/v2/usercollection/'+path+'?'+new URLSearchParams(params); const out=[]; let guard=0;
+  let url=ouraApiBase()+path+'?'+new URLSearchParams(params); const out=[]; let guard=0;
   while (url && guard++<60){
     const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
     if (res.status===401||res.status===403) throw new OuraErr('auth',res.status);
     if (!res.ok) throw new OuraErr('http',res.status);
     const j=await res.json(); if (Array.isArray(j.data)) out.push(...j.data);
-    url=j.next_token?('https://api.ouraring.com/v2/usercollection/'+path+'?'+new URLSearchParams(Object.assign({},params,{next_token:j.next_token}))):null;
+    url=j.next_token?(ouraApiBase()+path+'?'+new URLSearchParams(Object.assign({},params,{next_token:j.next_token}))):null;
   }
   return out;
 }
@@ -1532,7 +1540,7 @@ async function syncOura(){
   if (btn) btn.disabled=false;
   if (ok>0){ S.oura.lastSync=Date.now(); save(); }
   let text, cls='small msg-ok';
-  if (ok===0 && netFail>0){ cls='small msg-err'; text="Couldn't reach Oura from the browser. Either the connection failed or Oura's API doesn't allow requests from web pages (a CORS block). Use the file import below instead."; }
+  if (ok===0 && netFail>0){ cls='small msg-err'; text="Couldn't reach your Worker (check the Worker URL is correct and it's deployed) or your connection dropped. File import below still works."; }
   else if (ok===0 && authFail>0){ cls='small msg-err'; text='Oura rejected the connection. Try Disconnect, then Connect to Oura again. File import below still works.'; }
   else if (ok===0){ cls='small msg-err'; text='Sync failed. '+notes.join('; '); }
   else text=`Synced ${total} days of data${hrOk?' plus heart rate':''}.${notes.length?' Skipped: '+notes.join('; ')+'.':''}${authFail?' Some data types were not permitted for this token.':''}`;
