@@ -594,7 +594,7 @@ function buildCtx(){
   // Derived context variables that need no Oura sync at all: day-of-week and daylight hours,
   // computed straight from the date (and your location, for daylight) rather than fetched or logged.
   const allDates=new Set([...Object.keys(dmAll), ...Object.keys(S.oura.days)]);
-  const wkRaw={}, dlRaw={}, lat=+S.settings.lat;
+  const wkRaw={}, dlRaw={}, lat=S.settings.lat==null?NaN:+S.settings.lat; // null (location cleared) must stay "unset", not coerce to 0° (the equator)
   for (const d of allDates){ const dt=parseYmd(d); wkRaw[d]=(dt.getDay()===0||dt.getDay()===6)?1:0; if (isFinite(lat)) dlRaw[d]=dayLengthHours(lat,dt); }
   ou.weekend={raw:wkRaw, dev:devMap(wkRaw)}; oks.push('weekend');
   if (isFinite(lat) && Object.keys(dlRaw).length){ ou.day_len={raw:dlRaw, dev:devMap(dlRaw)}; oks.push('day_len'); }
@@ -1531,7 +1531,7 @@ async function syncWeather(){
   // Open-Meteo's archive API is free, needs no account or key, and (unlike Oura's data API)
   // is built for direct browser use, so this calls it straight — no worker needed. It only
   // ever sends a latitude/longitude and a date range, nothing about you or your check-ins.
-  const lat=+S.settings.lat, lon=+S.settings.lon, btn=$('[data-act=sync-weather]');
+  const lat=S.settings.lat==null?NaN:+S.settings.lat, lon=S.settings.lon==null?NaN:+S.settings.lon, btn=$('[data-act=sync-weather]'); // null must stay "unset", not coerce to 0
   if (!isFinite(lat) || !isFinite(lon)){ WEATHER_MSG={cls:'small msg-err',text:'Enter a latitude and longitude first.'}; renderData(); return; }
   if (btn) btn.disabled=true; const msg=$('#weather-msg'); if (msg){ msg.className='small muted'; msg.textContent='Fetching…'; }
   const today=new Date(), start=ymd(addDays(today,-90)), end=ymd(today);
@@ -1545,7 +1545,8 @@ async function syncWeather(){
     for (let i=0;i<times.length;i++){ const d=times[i].slice(0,10), v=vals[i]; if (v==null) continue; (acc[d]||(acc[d]=[])).push(v); }
     let days=0; for (const d in acc) if (mergeDay(d,{pressure:mean(acc[d])})) days++;
     if (days>0) save();
-    WEATHER_MSG={cls:'small msg-ok',text:`Synced ${days} days of pressure data.`};
+    WEATHER_MSG = days>0 ? {cls:'small msg-ok',text:`Synced ${days} days of pressure data.`}
+                          : {cls:'small msg-err',text:'No pressure data came back for that date range. Double check the latitude/longitude.'};
   }catch(e){ WEATHER_MSG={cls:'small msg-err',text:"Couldn't reach the weather service from the browser ("+e.message+"). This is a separate free service (Open-Meteo), unrelated to Oura, so a failure here doesn't affect anything else."}; }
   if (btn) btn.disabled=false;
   toast(/msg-ok/.test(WEATHER_MSG.cls)?'Weather synced ✓':'Weather sync failed');
@@ -1971,7 +1972,13 @@ document.addEventListener('click',async ev=>{
     case 'connect-oura': await connectOura($('#oura-client-id').value, $('#oura-worker-url').value); break;
     case 'disconnect-oura': disconnectOura(); renderData(); break;
     case 'sync-oura': await syncOura(); break;
-    case 'save-loc': { const la=parseFloat($('#loc-lat').value), lo=parseFloat($('#loc-lon').value); S.settings.lat=isFinite(la)?la:null; S.settings.lon=isFinite(lo)?lo:null; save(); toast('Location saved'); renderData(); break; }
+    case 'save-loc': {
+      const laRaw=$('#loc-lat').value.trim(), loRaw=$('#loc-lon').value.trim();
+      const la=laRaw===''?null:parseFloat(laRaw), lo=loRaw===''?null:parseFloat(loRaw);
+      if (la!=null && (!isFinite(la)||la<-90||la>90)){ toast('Latitude must be between -90 and 90'); break; }
+      if (lo!=null && (!isFinite(lo)||lo<-180||lo>180)){ toast('Longitude must be between -180 and 180'); break; }
+      S.settings.lat=la; S.settings.lon=lo; save(); toast('Location saved'); renderData(); break;
+    }
     case 'sync-weather': await syncWeather(); break;
     case 'rem-add': if (S.settings.reminders.length<3){ S.settings.reminders.push('14:00'); S.settings.reminders.sort(); save(); renderData(); } break;
     case 'rem-del': S.settings.reminders.splice(+b.dataset.i,1); save(); renderData(); break;
