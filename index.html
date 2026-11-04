@@ -19,6 +19,7 @@
   --accent:#0f766e; --accent-ink:#ffffff; --accent-soft:#d9efec;
   --warn-bg:#fdf3dc; --warn-ink:#6b4a05; --danger:#b42318;
   --c-mood:#0f766e; --c-anxiety:#c2410c; --c-stress:#7c3aed; --c-energy:#1d4ed8; --c-oura:#64748b;
+  --c-rested:#0891b2; --c-connection:#be185d; --c-discomfort:#a16207; --c-focus:#4338ca;
   --on-c:#ffffff;
   --shadow:0 1px 2px rgba(20,30,40,.06),0 4px 14px rgba(20,30,40,.05);
 }
@@ -28,6 +29,7 @@
     --accent:#2dd4bf; --accent-ink:#06211e; --accent-soft:#16403c;
     --warn-bg:#3a2e12; --warn-ink:#f2d58b; --danger:#f97066;
     --c-mood:#2dd4bf; --c-anxiety:#fb923c; --c-stress:#a78bfa; --c-energy:#60a5fa; --c-oura:#94a3b8;
+    --c-rested:#22d3ee; --c-connection:#f472b6; --c-discomfort:#facc15; --c-focus:#818cf8;
     --on-c:#0b1218; --shadow:none;
   }
 }
@@ -36,6 +38,7 @@
   --accent:#2dd4bf; --accent-ink:#06211e; --accent-soft:#16403c;
   --warn-bg:#3a2e12; --warn-ink:#f2d58b; --danger:#f97066;
   --c-mood:#2dd4bf; --c-anxiety:#fb923c; --c-stress:#a78bfa; --c-energy:#60a5fa; --c-oura:#94a3b8;
+  --c-rested:#22d3ee; --c-connection:#f472b6; --c-discomfort:#facc15; --c-focus:#818cf8;
   --on-c:#0b1218; --shadow:none;
 }
 *{box-sizing:border-box}
@@ -234,6 +237,16 @@ const pad = n => String(n).padStart(2,'0');
 const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const parseYmd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
 const addDays = (d,n) => new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
+// Hours of daylight for a latitude and date — a standard astronomical approximation (Forsythe
+// et al. 1995), computed purely from the date, no network call, no location service.
+function dayLengthHours(lat, date){
+  const start=new Date(date.getFullYear(),0,1), doy=Math.floor((date-start)/864e5)+1;
+  const P=Math.asin(0.39795*Math.cos(0.2163108+2*Math.atan(0.9671396*Math.tan(0.00860*(doy-186)))));
+  const L=lat*Math.PI/180;
+  const x=(Math.sin(0.8333*Math.PI/180)+Math.sin(L)*Math.sin(P))/(Math.cos(L)*Math.cos(P));
+  if (x<=-1) return 24; if (x>=1) return 0; // polar day / polar night
+  return 24-(24/Math.PI)*Math.acos(x);
+}
 const mean = a => a.reduce((s,v)=>s+v,0)/a.length;
 const sd = a => { if (a.length<2) return 0; const m=mean(a); return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/(a.length-1)); };
 const median = a => { if (!a.length) return null; const s=[...a].sort((x,y)=>x-y), n=s.length; return n%2 ? s[(n-1)/2] : (s[n/2-1]+s[n/2])/2; };
@@ -258,14 +271,18 @@ function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('sh
    Constants
    ===================================================================== */
 const METRICS = [
-  {k:'mood',    label:'Mood',    q:'How is your mood?',        lo:'Very low', hi:'Great',        color:'--c-mood'},
-  {k:'anxiety', label:'Anxiety', q:'How anxious do you feel?', lo:'Calm',     hi:'Very anxious', color:'--c-anxiety'},
-  {k:'stress',  label:'Stress',  q:'How stressed do you feel?',lo:'Relaxed',  hi:'Overwhelmed',  color:'--c-stress'},
-  {k:'energy',  label:'Energy',  q:'How is your energy?',      lo:'Drained',  hi:'Energized',    color:'--c-energy'}
+  {k:'mood',       label:'Mood',       q:'How is your mood?',                    lo:'Very low',  hi:'Great',         color:'--c-mood'},
+  {k:'anxiety',    label:'Anxiety',    q:'How anxious do you feel?',             lo:'Calm',      hi:'Very anxious',  color:'--c-anxiety'},
+  {k:'stress',     label:'Stress',     q:'How stressed do you feel?',            lo:'Relaxed',   hi:'Overwhelmed',   color:'--c-stress'},
+  {k:'energy',     label:'Energy',     q:'How is your energy?',                  lo:'Drained',   hi:'Energized',     color:'--c-energy'},
+  {k:'rested',     label:'Rested',     q:'How rested do you feel?',              lo:'Exhausted', hi:'Fully rested',  color:'--c-rested'},
+  {k:'connection', label:'Connection', q:'How connected to others do you feel?',lo:'Isolated',  hi:'Very connected',color:'--c-connection'},
+  {k:'discomfort', label:'Discomfort', q:'Any physical discomfort or pain?',     lo:'None',      hi:'A lot',         color:'--c-discomfort'},
+  {k:'focus',      label:'Focus',      q:'How clear is your mind right now?',    lo:'Foggy',     hi:'Sharp',         color:'--c-focus'}
 ];
 const M = Object.fromEntries(METRICS.map(m=>[m.k,m]));
 const LAB = k => k==='overall' ? 'Overall' : M[k].label;
-const GOOD_UP = k => k==='mood' || k==='energy' || k==='overall';
+const GOOD_UP = k => k==='mood' || k==='energy' || k==='overall' || k==='rested' || k==='connection' || k==='focus';
 
 const OURA = [
   {k:'sleep_score',      label:'Sleep score',          p:'sleep score',          unit:'',    dec:0},
@@ -284,13 +301,18 @@ const OURA = [
   {k:'active_cal',       label:'Active calories',      p:'active calories',      unit:' kcal',dec:0},
   {k:'stress_high_min',  label:'High-stress time',     p:'high-stress time',     unit:' min',dec:0},
   {k:'recovery_high_min',label:'High-recovery time',   p:'high-recovery time',   unit:' min',dec:0},
-  {k:'spo2',             label:'Blood oxygen',         p:'blood oxygen',         unit:'%',   dec:1}
+  {k:'spo2',             label:'Blood oxygen',         p:'blood oxygen',         unit:'%',   dec:1},
+  {k:'resp_rate',        label:'Respiratory rate',     p:'respiratory rate',     unit:' br/min',dec:1},
+  {k:'inactive_min',     label:'Inactive time',        p:'inactive time',        unit:' min',dec:0},
+  {k:'pressure',         label:'Barometric pressure',  p:'barometric pressure',  unit:' hPa',dec:1},
+  {k:'weekend',          label:'Weekend',              p:'being a weekend day',  unit:'',    dec:0},
+  {k:'day_len',          label:'Daylight hours',       p:'daylight hours',       unit:' h',  dec:1}
 ];
 const OURA_BY = Object.fromEntries(OURA.map(o=>[o.k,o]));
 // Metrics that describe a night's sleep / next-morning recovery (used for "today → tonight" and the outlook)
-const SLEEPISH = ['sleep_score','total_sleep_h','sleep_eff','deep_min','rem_min','latency_min','avg_hrv','lowest_hr','avg_hr','readiness_score','temp_dev','spo2'];
+const SLEEPISH = ['sleep_score','total_sleep_h','sleep_eff','deep_min','rem_min','latency_min','avg_hrv','lowest_hr','avg_hr','readiness_score','temp_dev','spo2','resp_rate'];
 // Natural step sizes for "each extra ___ goes with ___"
-const STEP = {sleep_score:10, total_sleep_h:1, sleep_eff:5, deep_min:15, rem_min:15, latency_min:10, avg_hrv:10, lowest_hr:5, avg_hr:5, readiness_score:10, temp_dev:0.25, activity_score:10, steps:2000, active_cal:100, stress_high_min:30, recovery_high_min:30, spo2:1};
+const STEP = {sleep_score:10, total_sleep_h:1, sleep_eff:5, deep_min:15, rem_min:15, latency_min:10, avg_hrv:10, lowest_hr:5, avg_hr:5, readiness_score:10, temp_dev:0.25, activity_score:10, steps:2000, active_cal:100, stress_high_min:30, recovery_high_min:30, spo2:1, resp_rate:1, inactive_min:60, pressure:5, weekend:1, day_len:2};
 const SHORT = {sleep_score:'Sleep score', total_sleep_h:'Sleep (h)', avg_hrv:'HRV (ms)', lowest_hr:'Lowest HR', latency_min:'To sleep (min)', readiness_score:'Readiness'};
 const DEFAULT_TAGS = ['Exercise','Caffeine','Alcohol','Outside','Social','Alone time','Work','Busy day','Family','Poor sleep','Ate well','Skipped meal','Screens','Mindfulness','Travel','Sick'];
 const NON_LEVER = ['Work','Busy day','Sick','Poor sleep','Travel','Family'];
@@ -317,7 +339,7 @@ const OURA_SCOPES = 'email personal daily heartrate';
 let memOnly = false;
 function defaults(){
   return {v:2, entries:[], oura:{days:{}, labels:{}, lastSync:null}, hr:{}, phq:[], experiments:[],
-          settings:{reminders:['09:00','20:00'], tags:DEFAULT_TAGS.slice(), lastBackup:null, tagScope:'day', phq4:true, phqSnooze:0},
+          settings:{reminders:['09:00','20:00'], tags:DEFAULT_TAGS.slice(), lastBackup:null, tagScope:'day', phq4:true, phqSnooze:0, lat:42.9634, lon:-85.6681},
           demo:false, demoDays:[]};
 }
 function load(){
@@ -538,7 +560,13 @@ function dayMap(slot){
 }
 // Overall = mood, energy, and the inverse of anxiety and stress (higher = better day)
 function addOverall(dm){
-  for (const d in dm){ const v=dm[d], c=[]; if (v.mood!=null) c.push(v.mood); if (v.energy!=null) c.push(v.energy); if (v.anxiety!=null) c.push(8-v.anxiety); if (v.stress!=null) c.push(8-v.stress); if (c.length>=2) v.overall=mean(c); }
+  // Equal-weighted wellbeing average across every check-in metric, flipping the "bad-direction"
+  // ones (anxiety, stress, discomfort) so every term points the same way (higher = better).
+  for (const d in dm){
+    const v=dm[d], c=[];
+    for (const m of METRICS){ const x=v[m.k]; if (x!=null) c.push(GOOD_UP(m.k)?x:8-x); }
+    if (c.length>=2) v.overall=mean(c);
+  }
   return dm;
 }
 function ouraMeta(k){ return OURA_BY[k] || {k, label:(S.oura.labels&&S.oura.labels[k])||k, p:(S.oura.labels&&S.oura.labels[k])||k, unit:'', dec:2, custom:true}; }
@@ -563,6 +591,13 @@ function buildCtx(){
   const series=src=>{ const o={}; for (const k of OUTS){ const raw={}; for (const d in src) if (src[d][k]!=null) raw[d]=src[d][k]; o[k]={raw, dev:devMap(raw)}; } return o; };
   const oks=ouraKeys(), ou={};
   for (const k of oks){ const raw={}; for (const d in S.oura.days){ const v=S.oura.days[d][k]; if (v!=null&&isFinite(v)) raw[d]=v; } ou[k]={raw, dev:devMap(raw)}; }
+  // Derived context variables that need no Oura sync at all: day-of-week and daylight hours,
+  // computed straight from the date (and your location, for daylight) rather than fetched or logged.
+  const allDates=new Set([...Object.keys(dmAll), ...Object.keys(S.oura.days)]);
+  const wkRaw={}, dlRaw={}, lat=+S.settings.lat;
+  for (const d of allDates){ const dt=parseYmd(d); wkRaw[d]=(dt.getDay()===0||dt.getDay()===6)?1:0; if (isFinite(lat)) dlRaw[d]=dayLengthHours(lat,dt); }
+  ou.weekend={raw:wkRaw, dev:devMap(wkRaw)}; oks.push('weekend');
+  if (isFinite(lat) && Object.keys(dlRaw).length){ ou.day_len={raw:dlRaw, dev:devMap(dlRaw)}; oks.push('day_len'); }
   return {dm, dmAll, ck:series(dm), ckAll:series(dmAll), ou, oks};
 }
 // Pair check-in days with Oura days for a direction. For "next", also returns the same-day Oura value (to control for it).
@@ -1438,10 +1473,10 @@ function normalizeApi(col,r){
   switch(col){
     case 'daily_sleep': put('sleep_score',r.score); break;
     case 'daily_readiness': put('readiness_score',r.score); put('temp_dev',r.temperature_deviation); break;
-    case 'daily_activity': put('activity_score',r.score); put('steps',r.steps); put('active_cal',r.active_calories); break;
+    case 'daily_activity': put('activity_score',r.score); put('steps',r.steps); put('active_cal',r.active_calories); put('inactive_min',r.sedentary_time,z=>z/60); break;
     case 'sleep':
       put('total_sleep_h',r.total_sleep_duration,z=>z/3600); put('deep_min',r.deep_sleep_duration,z=>z/60); put('rem_min',r.rem_sleep_duration,z=>z/60);
-      put('sleep_eff',r.efficiency); put('latency_min',r.latency,z=>z/60); put('avg_hrv',r.average_hrv); put('lowest_hr',r.lowest_heart_rate); put('avg_hr',r.average_heart_rate); break;
+      put('sleep_eff',r.efficiency); put('latency_min',r.latency,z=>z/60); put('avg_hrv',r.average_hrv); put('lowest_hr',r.lowest_heart_rate); put('avg_hr',r.average_heart_rate); put('resp_rate',r.average_breath); break;
     case 'daily_stress': put('stress_high_min',r.stress_high,z=>z/60); put('recovery_high_min',r.recovery_high,z=>z/60); break;
     case 'daily_spo2': put('spo2', r.spo2_percentage && r.spo2_percentage.average); break;
   }
@@ -1491,7 +1526,31 @@ function importHrCsv(text){
   return ingestHr(recs);
 }
 
-let OURA_MSG={cls:'',text:''}, IMPORT_MSG={cls:'',text:''};
+let OURA_MSG={cls:'',text:''}, IMPORT_MSG={cls:'',text:''}, WEATHER_MSG={cls:'',text:''};
+async function syncWeather(){
+  // Open-Meteo's archive API is free, needs no account or key, and (unlike Oura's data API)
+  // is built for direct browser use, so this calls it straight — no worker needed. It only
+  // ever sends a latitude/longitude and a date range, nothing about you or your check-ins.
+  const lat=+S.settings.lat, lon=+S.settings.lon, btn=$('[data-act=sync-weather]');
+  if (!isFinite(lat) || !isFinite(lon)){ WEATHER_MSG={cls:'small msg-err',text:'Enter a latitude and longitude first.'}; renderData(); return; }
+  if (btn) btn.disabled=true; const msg=$('#weather-msg'); if (msg){ msg.className='small muted'; msg.textContent='Fetching…'; }
+  const today=new Date(), start=ymd(addDays(today,-90)), end=ymd(today);
+  try{
+    const url=`https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${start}&end_date=${end}&hourly=surface_pressure&timezone=auto`;
+    const res=await fetch(url);
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const j=await res.json();
+    const times=(j.hourly&&j.hourly.time)||[], vals=(j.hourly&&j.hourly.surface_pressure)||[];
+    const acc={};
+    for (let i=0;i<times.length;i++){ const d=times[i].slice(0,10), v=vals[i]; if (v==null) continue; (acc[d]||(acc[d]=[])).push(v); }
+    let days=0; for (const d in acc) if (mergeDay(d,{pressure:mean(acc[d])})) days++;
+    if (days>0) save();
+    WEATHER_MSG={cls:'small msg-ok',text:`Synced ${days} days of pressure data.`};
+  }catch(e){ WEATHER_MSG={cls:'small msg-err',text:"Couldn't reach the weather service from the browser ("+e.message+"). This is a separate free service (Open-Meteo), unrelated to Oura, so a failure here doesn't affect anything else."}; }
+  if (btn) btn.disabled=false;
+  toast(/msg-ok/.test(WEATHER_MSG.cls)?'Weather synced ✓':'Weather sync failed');
+  if (currentTab()==='data') renderData();
+}
 class OuraErr extends Error { constructor(kind,status){ super(kind); this.kind=kind; this.status=status; } }
 function ouraApiBase(){
   // Oura's data API doesn't send CORS headers, so a browser page can't read its responses
@@ -1592,6 +1651,9 @@ function mapCol(name,file){
   if (n==='stress_high') return {k:'stress_high_min', conv:m=>m>1440?1/60:1};
   if (n==='recovery_high') return {k:'recovery_high_min', conv:m=>m>1440?1/60:1};
   if (/spo2.*(average|avg)|^spo2/.test(n)) return {k:'spo2'};
+  if (/breath|respiratory/.test(n)) return {k:'resp_rate'};
+  if (/sedentary|inactive/.test(n)) return {k:'inactive_min', conv:m=>m>300?1/60:1};
+  if (/pressure/.test(n)) return {k:'pressure'};
   return null;
 }
 function importCsv(fname,text){
@@ -1704,8 +1766,9 @@ function loadDemo(){
       sleep_eff:Math.round(clamp(88+q*3+gauss()*2,70,99)), deep_min:Math.round(clamp(75+q*12+gauss()*8,25,130)), rem_min:Math.round(clamp(95+q*10+gauss()*10,40,150)),
       latency_min:Math.round(clamp(14-q*4+gauss()*4,2,50)), avg_hrv:Math.round(clamp(48+q*5+gauss()*6,18,90)), lowest_hr:Math.round(clamp(56-q*2.2+gauss()*1.2,45,72)),
       avg_hr:Math.round(clamp(61-q*2+gauss()*1.3,48,76)), readiness_score:Math.round(clamp(76+q*7+gauss()*4,40,98)), temp_dev:+(gauss()*0.25).toFixed(2),
-      steps:Math.round(clamp(7600+gauss()*2400+(weekend?1500:0),1500,18000)) };
+      steps:Math.round(clamp(7600+gauss()*2400+(weekend?1500:0),1500,18000)), resp_rate:+clamp(15-q*0.3+gauss()*0.6,12,19).toFixed(1) };
     day.activity_score=Math.round(clamp(60+(day.steps-7600)/220+gauss()*5,30,98)); day.active_cal=Math.round(clamp(day.steps*0.045+gauss()*40,60,900));
+    day.inactive_min=Math.round(clamp(760-(day.steps-7600)/15+gauss()*40,300,1100));
     day.stress_high_min=Math.round(clamp(110-q*20+gauss()*25,0,400)); day.recovery_high_min=Math.round(clamp(80+q*20+gauss()*25,0,300));
     S.oura.days[ds]=day; S.demoDays.push(ds);
     const skip=rnd()<(q<-0.8?0.35:0.04);
@@ -1722,11 +1785,15 @@ function loadDemo(){
       const str=3.2+0.9*(work?1:0)-0.5*(exer?1:0)-0.3*q-0.25*(soc?1:0)+gauss()*0.7;
       const mood=4.8+0.35*q+0.4*(exer?1:0)+0.35*(soc?1:0)+0.25*(out?1:0)-0.25*(anx-3.3)-(short?0.8:0)-(combo?0.9:0)+gauss()*0.6;
       const en=4.3-(combo?0.7:0)+0.7*q+0.3*(exer?1:0)-0.3*(al?1:0)+(sl==='evening'?-0.6:0)+gauss()*0.6;
+      const rested=4.8+0.5*q+0.4*(day.total_sleep_h-7.1)-(short?1:0)+gauss()*0.6;
+      const connection=4.3+0.9*(soc?1:0)+0.3*(weekend?1:0)-0.3*(work&&!soc?1:0)+gauss()*0.7;
+      const discomfort=2.3-0.2*(out?1:0)+0.3*(short?1:0)+0.2*(combo?1:0)+gauss()*0.8;
+      const focus=4.6+0.4*q-0.35*(anx-3.3)+(caf?(sl==='morning'?0.4:-0.2):0)-(short?0.5:0)+gauss()*0.6;
       anxs.push(anx);
       if (skip || ts>Date.now()) return;
       const bEnd=Math.floor(hh*60/5); for (let b=bEnd-12;b<=bEnd;b++) if (b>=0&&hrBins[b]) hrBins[b]+=Math.round((anx-3.3)*3.5);
       const tags=[]; if (caf) tags.push('Caffeine'); if (al) tags.push('Alcohol'); if (exer) tags.push('Exercise'); if (soc) tags.push('Social'); if (work) tags.push('Work'); if (out) tags.push('Outside'); if (q<-1) tags.push('Poor sleep');
-      S.entries.push({id:'demo'+uid(), ts, date:ds, slot:sl, demo:true, m:{mood:clamp(Math.round(mood),1,7), anxiety:clamp(Math.round(anx),1,7), stress:clamp(Math.round(str),1,7), energy:clamp(Math.round(en),1,7)}, tags, note:''});
+      S.entries.push({id:'demo'+uid(), ts, date:ds, slot:sl, demo:true, m:{mood:clamp(Math.round(mood),1,7), anxiety:clamp(Math.round(anx),1,7), stress:clamp(Math.round(str),1,7), energy:clamp(Math.round(en),1,7), rested:clamp(Math.round(rested),1,7), connection:clamp(Math.round(connection),1,7), discomfort:clamp(Math.round(discomfort),1,7), focus:clamp(Math.round(focus),1,7)}, tags, note:''});
     });
     if (i>0) S.hr[ds]=hrBins; else { const nowB=Math.floor((today.getHours()*60+today.getMinutes())/5); S.hr[ds]=hrBins.map((v,b)=>b<=nowB?v:0); }
     alcPrev=alc; anxPrev=anxs.length?mean(anxs):anxEma; anxEma=0.85*anxEma+0.15*anxPrev;
@@ -1775,6 +1842,14 @@ function renderData(){
       <p id="oura-msg" class="${OURA_MSG.cls||'small'}" role="status">${esc(OURA_MSG.text)}</p></details>
   </div>
 
+  <div class="section-t">Location &amp; weather</div>
+  <div class="card">
+    <p class="muted small" style="margin:0 0 8px">Your latitude powers daylight hours in Insights automatically — no fetch, no account, computed from the date alone. Longitude is only used if you sync barometric pressure below, from a free weather service unrelated to Oura.</p>
+    <div class="row"><input type="text" id="loc-lat" placeholder="Latitude" value="${esc(S.settings.lat??'')}" style="max-width:130px"><input type="text" id="loc-lon" placeholder="Longitude" value="${esc(S.settings.lon??'')}" style="max-width:130px"><button class="btn" data-act="save-loc">Save</button></div>
+    <div class="row" style="margin-top:10px"><button class="primary" data-act="sync-weather">Sync pressure data</button></div>
+    <p id="weather-msg" class="${WEATHER_MSG.cls||'small'}" role="status">${esc(WEATHER_MSG.text)}</p>
+  </div>
+
   <div class="section-t">Reminders</div>
   <div class="card">
     <p class="muted small" style="margin:0 0 8px">Check-ins per day (1 to 3). A web app can't ring your phone when it's closed, so download a calendar file and add it to your phone's calendar for real notifications.</p>
@@ -1821,7 +1896,7 @@ const csvCell = v => { v=v==null?'':String(v); return /[",\n\r]/.test(v)?'"'+v.r
 const csvRow = a => a.map(csvCell).join(',');
 function exportCheckins(){
   const hrm=hrDeltaMap();
-  const lines=[csvRow(['date','time','slot','mood','anxiety','stress','energy','tags','note','hr_vs_usual_bpm'])];
+  const lines=[csvRow(['date','time','slot',...METRICS.map(m=>m.k),'tags','note','hr_vs_usual_bpm'])];
   [...S.entries].sort((a,b)=>a.ts-b.ts).forEach(e=>{ const hd=hrm&&hrm.get(e.id); lines.push(csvRow([e.date, new Date(e.ts).toTimeString().slice(0,5), e.slot, ...METRICS.map(m=>e.m[m.k]), e.tags.join('; '), e.note, hd?hd.delta.toFixed(1):''])); });
   download('pulsecheck-checkins.csv', lines.join('\n'), 'text/csv');
 }
@@ -1896,6 +1971,8 @@ document.addEventListener('click',async ev=>{
     case 'connect-oura': await connectOura($('#oura-client-id').value, $('#oura-worker-url').value); break;
     case 'disconnect-oura': disconnectOura(); renderData(); break;
     case 'sync-oura': await syncOura(); break;
+    case 'save-loc': { const la=parseFloat($('#loc-lat').value), lo=parseFloat($('#loc-lon').value); S.settings.lat=isFinite(la)?la:null; S.settings.lon=isFinite(lo)?lo:null; save(); toast('Location saved'); renderData(); break; }
+    case 'sync-weather': await syncWeather(); break;
     case 'rem-add': if (S.settings.reminders.length<3){ S.settings.reminders.push('14:00'); S.settings.reminders.sort(); save(); renderData(); } break;
     case 'rem-del': S.settings.reminders.splice(+b.dataset.i,1); save(); renderData(); break;
     case 'ics': download('pulsecheck-reminders.ics', makeIcs(), 'text/calendar'); toast('Open the file to add the reminders to your calendar'); break;
